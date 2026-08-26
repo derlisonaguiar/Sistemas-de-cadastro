@@ -1,0 +1,78 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+
+export async function GET() {
+  try {
+    const organization = await prisma.organization.findFirst();
+
+    if (!organization) {
+      return NextResponse.json(
+        { ok: false, message: "Organização não encontrada." },
+        { status: 404 }
+      );
+    }
+
+    const directorates = await prisma.directorate.findMany({
+      where: {
+        organizationId: organization.id,
+      },
+      orderBy: {
+        name: "asc",
+      },
+    });
+
+    return NextResponse.json({
+      ok: true,
+      directorates,
+    });
+  } catch (error) {
+    console.error("Erro ao buscar diretorias:", error);
+
+    return NextResponse.json(
+      { ok: false, message: "Erro ao buscar diretorias." },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const organization = await prisma.organization.findFirst();
+
+    if (!organization) {
+      return NextResponse.json(
+        { ok: false, message: "Organização não encontrada." },
+        { status: 404 }
+      );
+    }
+
+    const data = await request.json();
+
+    if (!data.name || !data.name.trim()) {
+      return NextResponse.json(
+        { ok: false, message: "O nome da diretoria é obrigatório." },
+        { status: 400 }
+      );
+    }
+
+    const directorate = await prisma.directorate.create({
+      data: {
+        organizationId: organization.id,
+        name: data.name.trim(),
+        description: data.description?.trim() || null,
+      },
+    });
+
+    return NextResponse.json({
+      ok: true,
+      directorate,
+    });
+  } catch (error) {
+    console.error("Erro ao cadastrar diretoria:", error);
+
+    return NextResponse.json(
+      { ok: false, message: "Erro ao cadastrar diretoria." },
+      { status: 500 }
+    );
+  }
+}
