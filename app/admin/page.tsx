@@ -1,25 +1,9 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { requireAdminProfile } from "@/lib/auth";
 
 export default async function AdminPage() {
-  const organization =
-    await prisma.organization.findFirst();
-
-  if (!organization) {
-    return (
-      <div>
-        <h1 className="text-2xl font-semibold text-gray-900">
-          Dashboard
-        </h1>
-
-        <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4">
-          <p className="text-sm text-red-700">
-            Nenhuma organização foi encontrada.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const { organization } = await requireAdminProfile();
 
   const [
     activeMembers,

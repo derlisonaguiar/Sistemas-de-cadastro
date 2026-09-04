@@ -1,0 +1,9 @@
+[
+  "organization.name", "organization.shortName", "organization.cnpj", "organization.email", "organization.phone", "organization.website", "organization.address", "organization.city", "organization.state", "organization.logoImage",
+  "member.fullName", "member.email", "member.cpf", "member.phone", "member.course", "member.registration", "member.nationality", "member.maritalStatus", "member.rg", "member.rgIssuer", "member.address", "member.addressNumber", "member.neighborhood", "member.cep", "member.city", "member.state", "member.directorate.name", "member.position.name",
+  "representative.fullName", "representative.email", "representative.cpf", "representative.phone", "representative.course", "representative.nationality", "representative.maritalStatus", "representative.rg", "representative.rgIssuer", "representative.position",
+  "client.name", "client.companyName", "client.cpfCnpj", "client.email", "client.phone", "client.contactName", "client.address",
+  "project.name", "project.description", "project.startDate", "project.endDate", "project.budget",
+  "contract.title", "contract.contractNumber", "contract.value", "contract.startDate", "contract.endDate",
+  "system.currentDate"
+]

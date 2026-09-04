@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getAdminApiContext } from "@/lib/auth";
+import { createSignedStorageUrl } from "@/lib/storage";
 
 export async function GET() {
   try {
-    const organization =
-      await prisma.organization.findFirst();
+    const authContext = await getAdminApiContext();
+    if (authContext.response) return authContext.response;
+    const organization = authContext.auth!.organization;
 
     if (!organization) {
       return NextResponse.json(
@@ -22,9 +25,31 @@ export async function GET() {
       await prisma.documentTemplate.findMany({
         where: {
           organizationId: organization.id,
+          renderMode: { not: "VISUAL_CERTIFICATE" },
         },
-        include: {
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          type: true,
+          active: true,
+          sourceType: true,
+          renderMode: true,
+          processingStatus: true,
+          originalFileName: true,
+          originalFileUrl: true,
+          createdAt: true,
+          updatedAt: true,
           fields: {
+            select: {
+              id: true,
+              key: true,
+              label: true,
+              type: true,
+              mappedPath: true,
+              required: true,
+              confidence: true,
+            },
             orderBy: {
               createdAt: "asc",
             },
@@ -35,9 +60,16 @@ export async function GET() {
         },
       });
 
+    const safeTemplates = await Promise.all(templates.map(async (template) => ({
+      ...template,
+      originalFileUrl: template.originalFileUrl
+        ? await createSignedStorageUrl(template.originalFileUrl)
+        : null,
+    })));
+
     return NextResponse.json({
       ok: true,
-      templates,
+      templates: safeTemplates,
     });
   } catch (error) {
     console.error(

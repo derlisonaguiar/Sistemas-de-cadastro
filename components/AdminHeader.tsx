@@ -1,6 +1,19 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+
 export default function AdminHeader() {
+  const router = useRouter();
+  const [signingOut, setSigningOut] = useState(false);
+
+  async function handleSignOut() {
+    setSigningOut(true);
+    await createClient().auth.signOut();
+    router.replace("/login");
+    router.refresh();
+  }
   return (
     <header className="flex h-16 items-center justify-between border-b border-gray-200 bg-white px-6">
       <div>
@@ -28,9 +41,11 @@ export default function AdminHeader() {
 
         <button
           type="button"
+          onClick={handleSignOut}
+          disabled={signingOut}
           className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
         >
-          Sair
+          {signingOut ? "Saindo..." : "Sair"}
         </button>
       </div>
     </header>

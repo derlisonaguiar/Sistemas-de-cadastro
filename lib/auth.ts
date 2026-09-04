@@ -1,65 +1,81 @@
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 
-export async function getAuthenticatedProfile() {
+export type AuthFailure = "UNAUTHORIZED" | "PROFILE_REQUIRED" | "FORBIDDEN";
+
+export class AuthError extends Error {
+  constructor(public readonly code: AuthFailure) {
+    super(code);
+    this.name = "AuthError";
+  }
+}
+
+export async function getAuthenticatedUser() {
   const supabase = await createClient();
+  const { data: { user }, error } = await supabase.auth.getUser();
+  return error || !user ? null : user;
+}
 
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
+export async function getAuthenticatedProfile() {
+  const user = await getAuthenticatedUser();
+  if (!user) return null;
 
-  if (error || !user) {
-    return null;
-  }
+  const profile = await prisma.userProfile.findUnique({
+    where: { id: user.id },
+    include: { organization: true },
+  });
 
-  const profile =
-    await prisma.userProfile.findUnique({
-      where: {
-        id: user.id,
-      },
-
-      include: {
-        organization: true,
-      },
-    });
-
-  if (!profile) {
-    return null;
-  }
-
-  return {
-    user,
-    profile,
-    organization: profile.organization,
-  };
+  return profile ? { user, profile, organization: profile.organization } : null;
 }
 
 export async function requireAuthenticatedProfile() {
-  const result =
-    await getAuthenticatedProfile();
+  const user = await getAuthenticatedUser();
+  if (!user) throw new AuthError("UNAUTHORIZED");
 
-  if (!result) {
-    throw new Error(
-      "UNAUTHORIZED"
-    );
-  }
+  const profile = await prisma.userProfile.findUnique({
+    where: { id: user.id },
+    include: { organization: true },
+  });
 
-  return result;
+  if (!profile) throw new AuthError("PROFILE_REQUIRED");
+  return { user, profile, organization: profile.organization };
 }
 
 export async function requireAdminProfile() {
-  const result =
-    await requireAuthenticatedProfile();
+  const result = await requireAuthenticatedProfile();
+  if (result.profile.role !== "ADMIN") throw new AuthError("FORBIDDEN");
+  return result;
+}
 
-  if (
-    result.profile.role !==
-    "ADMIN"
-  ) {
-    throw new Error(
-      "FORBIDDEN"
+export function authErrorResponse(error: unknown) {
+  if (!(error instanceof AuthError)) return null;
+
+  if (error.code === "UNAUTHORIZED") {
+    return NextResponse.json(
+      { ok: false, message: "Não autenticado." },
+      { status: 401 }
     );
   }
 
-  return result;
+  return NextResponse.json(
+    {
+      ok: false,
+      message:
+        error.code === "PROFILE_REQUIRED"
+          ? "Usuário sem vínculo com uma organização."
+          : "Acesso não autorizado.",
+    },
+    { status: 403 }
+  );
+}
+
+export async function getAdminApiContext() {
+  try {
+    return { auth: await requireAdminProfile(), response: null };
+  } catch (error) {
+    const response = authErrorResponse(error);
+    if (response) return { auth: null, response };
+    throw error;
+  }
 }

@@ -30,6 +30,13 @@ export default function NovoDocumentoPage() {
   const [unknownFields, setUnknownFields] =
     useState<string[]>([]);
 
+  const [reviewTemplate, setReviewTemplate] = useState<null | {
+    id: string;
+    needsReview: boolean;
+    requiresOcr: boolean;
+    fields: Array<{ id: string; label: string; mappedPath: string | null; confidence: number | null; context: string | null }>;
+  }>(null);
+
   function handleFileChange(
     event: React.ChangeEvent<HTMLInputElement>
   ) {
@@ -48,7 +55,7 @@ export default function NovoDocumentoPage() {
     ) {
       const suggestedName =
         selectedFile.name
-          .replace(/\.docx$/i, "")
+          .replace(/\.(docx|pdf)$/i, "")
           .replace(/[_-]+/g, " ")
           .trim();
 
@@ -67,7 +74,7 @@ export default function NovoDocumentoPage() {
 
     if (!file) {
       setError(
-        "Selecione um arquivo DOCX."
+        "Selecione um arquivo DOCX ou PDF."
       );
 
       return;
@@ -146,7 +153,14 @@ export default function NovoDocumentoPage() {
           "Modelo enviado e validado com sucesso."
       );
 
-      setTimeout(() => {
+      setReviewTemplate({
+        id: data.template.id,
+        needsReview: Boolean(data.needsReview),
+        requiresOcr: Boolean(data.requiresOcr),
+        fields: Array.isArray(data.template.fields) ? data.template.fields : [],
+      });
+
+      if (!data.needsReview && !data.requiresOcr) setTimeout(() => {
         router.push(
           "/admin/documentos/modelos"
         );
@@ -175,7 +189,7 @@ export default function NovoDocumentoPage() {
         </h1>
 
         <p className="mt-1 text-sm text-gray-600">
-          Envie um arquivo DOCX preparado.
+          Envie um arquivo DOCX ou PDF.
           O sistema analisará automaticamente
           as variáveis antes de salvar.
         </p>
@@ -194,7 +208,7 @@ export default function NovoDocumentoPage() {
 
           <div className="p-5">
             <label className="mb-2 block text-sm font-medium text-gray-700">
-              Modelo DOCX *
+              Modelo DOCX ou PDF *
             </label>
 
             <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 px-6 py-10 text-center transition hover:border-purple-400 hover:bg-purple-50">
@@ -204,12 +218,12 @@ export default function NovoDocumentoPage() {
               </span>
 
               <span className="mt-1 text-xs text-gray-500">
-                DOCX de até 10 MB
+                DOCX ou PDF de até 10 MB
               </span>
 
               <input
                 type="file"
-                accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                accept=".docx,.pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf"
                 onChange={
                   handleFileChange
                 }
@@ -411,6 +425,42 @@ export default function NovoDocumentoPage() {
           <div className="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
             {success}
           </div>
+        )}
+
+        {reviewTemplate && (reviewTemplate.needsReview || reviewTemplate.requiresOcr) && (
+          <section className="rounded-lg border border-amber-200 bg-amber-50 p-5">
+            <h2 className="font-semibold text-amber-900">Resultado do processamento</h2>
+            {reviewTemplate.requiresOcr ? (
+              <p className="mt-2 text-sm text-amber-800">
+                O PDF não contém texto suficiente e foi marcado como requerendo OCR. Nenhum texto foi inventado.
+              </p>
+            ) : (
+              <>
+                <p className="mt-2 text-sm text-amber-800">
+                  Confirme ou corrija os campos sugeridos antes de usar o modelo.
+                </p>
+                <div className="mt-4 space-y-2">
+                  {reviewTemplate.fields.map((field) => (
+                    <div key={field.id} className="rounded-md border border-amber-200 bg-white p-3 text-sm">
+                      <p className="font-medium text-gray-900">{field.label}</p>
+                      <p className="mt-1 font-mono text-xs text-gray-600">{field.mappedPath || "Sem sugestão"}</p>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Confiança: {field.confidence == null ? "—" : `${Math.round(field.confidence * 100)}%`}
+                      </p>
+                      {field.context && <p className="mt-2 text-xs text-gray-500">{field.context}</p>}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+            <button
+              type="button"
+              onClick={() => router.push(`/admin/documentos/modelos/${reviewTemplate.id}`)}
+              className="mt-4 rounded-md bg-amber-700 px-4 py-2 text-sm font-medium text-white hover:bg-amber-800"
+            >
+              Revisar e confirmar mapeamentos
+            </button>
+          </section>
         )}
 
         <div className="flex flex-wrap justify-end gap-3">

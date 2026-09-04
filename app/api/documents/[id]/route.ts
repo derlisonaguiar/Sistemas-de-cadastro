@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getAdminApiContext } from "@/lib/auth";
+import { parseJsonRequest } from "@/lib/api";
+import { documentSchema, routeIdSchema } from "@/lib/validation";
+import { createSignedStorageUrl } from "@/lib/storage";
 
 type RouteContext = {
   params: Promise<{
@@ -12,9 +16,13 @@ export async function GET(
   context: RouteContext
 ) {
   try {
-    const { id } = await context.params;
+    const params = routeIdSchema.safeParse(await context.params);
+    if (!params.success) return NextResponse.json({ ok: false, message: "ID inválido." }, { status: 400 });
+    const { id } = params.data;
 
-    const organization = await prisma.organization.findFirst();
+    const authContext = await getAdminApiContext();
+    if (authContext.response) return authContext.response;
+    const organization = authContext.auth!.organization;
 
     if (!organization) {
       return NextResponse.json(
@@ -51,7 +59,12 @@ export async function GET(
 
     return NextResponse.json({
       ok: true,
-      document,
+      document: {
+        ...document,
+        fileUrl: document.fileUrl ? await createSignedStorageUrl(document.fileUrl) : null,
+        generatedDocxUrl: document.generatedDocxUrl ? await createSignedStorageUrl(document.generatedDocxUrl) : null,
+        generatedPdfUrl: document.generatedPdfUrl ? await createSignedStorageUrl(document.generatedPdfUrl) : null,
+      },
     });
   } catch (error) {
     console.error("Erro ao buscar documento:", error);
@@ -71,9 +84,13 @@ export async function PUT(
   context: RouteContext
 ) {
   try {
-    const { id } = await context.params;
+    const params = routeIdSchema.safeParse(await context.params);
+    if (!params.success) return NextResponse.json({ ok: false, message: "ID inválido." }, { status: 400 });
+    const { id } = params.data;
 
-    const organization = await prisma.organization.findFirst();
+    const authContext = await getAdminApiContext();
+    if (authContext.response) return authContext.response;
+    const organization = authContext.auth!.organization;
 
     if (!organization) {
       return NextResponse.json(
@@ -102,7 +119,9 @@ export async function PUT(
       );
     }
 
-    const data = await request.json();
+    const parsed = await parseJsonRequest(request, documentSchema);
+    if (parsed.response) return parsed.response;
+    const data = parsed.data!;
 
     if (!data.title || !data.title.trim()) {
       return NextResponse.json(
@@ -124,6 +143,28 @@ export async function PUT(
       );
     }
 
+    const relatedChecks = await Promise.all([
+      data.memberId
+        ? prisma.member.count({ where: { id: data.memberId, organizationId: organization.id } })
+        : Promise.resolve(1),
+      data.clientId
+        ? prisma.client.count({ where: { id: data.clientId, organizationId: organization.id } })
+        : Promise.resolve(1),
+      data.projectId
+        ? prisma.project.count({ where: { id: data.projectId, organizationId: organization.id } })
+        : Promise.resolve(1),
+      data.contractId
+        ? prisma.contract.count({ where: { id: data.contractId, organizationId: organization.id } })
+        : Promise.resolve(1),
+    ]);
+
+    if (relatedChecks.some((count) => count !== 1)) {
+      return NextResponse.json(
+        { ok: false, message: "Vínculo inválido para esta organização." },
+        { status: 400 }
+      );
+    }
+
     const document = await prisma.document.update({
       where: {
         id: existingDocument.id,
@@ -139,7 +180,6 @@ export async function PUT(
         contractId: data.contractId || null,
 
         description: data.description?.trim() || null,
-        fileUrl: data.fileUrl?.trim() || null,
 
         issueDate: data.issueDate
           ? new Date(data.issueDate)
@@ -179,9 +219,13 @@ export async function DELETE(
   context: RouteContext
 ) {
   try {
-    const { id } = await context.params;
+    const params = routeIdSchema.safeParse(await context.params);
+    if (!params.success) return NextResponse.json({ ok: false, message: "ID inválido." }, { status: 400 });
+    const { id } = params.data;
 
-    const organization = await prisma.organization.findFirst();
+    const authContext = await getAdminApiContext();
+    if (authContext.response) return authContext.response;
+    const organization = authContext.auth!.organization;
 
     if (!organization) {
       return NextResponse.json(

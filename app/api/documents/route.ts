@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getAdminApiContext } from "@/lib/auth";
+import { idSchema } from "@/lib/validation";
+import { createSignedStorageUrl } from "@/lib/storage";
 
 export async function GET(
   request: Request
 ) {
   try {
-    const organization =
-      await prisma.organization.findFirst();
+    const authContext = await getAdminApiContext();
+    if (authContext.response) return authContext.response;
+    const organization = authContext.auth!.organization;
 
     if (!organization) {
       return NextResponse.json(
@@ -29,6 +33,10 @@ export async function GET(
         "memberId"
       );
 
+    if (memberId && !idSchema.safeParse(memberId).success) {
+      return NextResponse.json({ ok: false, message: "ID inválido." }, { status: 400 });
+    }
+
     const documents =
       await prisma.document.findMany({
         where: {
@@ -42,7 +50,17 @@ export async function GET(
             : {}),
         },
 
-        include: {
+        select: {
+          id: true,
+          title: true,
+          type: true,
+          status: true,
+          description: true,
+          generatedDocxUrl: true,
+          generatedPdfUrl: true,
+          issueDate: true,
+          signatureDate: true,
+          createdAt: true,
           template: {
             select: {
               id: true,
@@ -85,9 +103,19 @@ export async function GET(
         },
       });
 
+    const safeDocuments = await Promise.all(documents.map(async (document) => ({
+      ...document,
+      generatedDocxUrl: document.generatedDocxUrl
+        ? await createSignedStorageUrl(document.generatedDocxUrl)
+        : null,
+      generatedPdfUrl: document.generatedPdfUrl
+        ? await createSignedStorageUrl(document.generatedPdfUrl)
+        : null,
+    })));
+
     return NextResponse.json({
       ok: true,
-      documents,
+      documents: safeDocuments,
     });
   } catch (error) {
     console.error(

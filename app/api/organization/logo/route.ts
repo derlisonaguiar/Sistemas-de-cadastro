@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
-import { writeFile } from "fs/promises";
-import path from "path";
 import { prisma } from "@/lib/prisma";
+import { getAdminApiContext } from "@/lib/auth";
+import { checkRateLimit } from "@/lib/api";
+import { validateImageUpload } from "@/lib/file-security";
+import { uploadPublicObject } from "@/lib/storage";
 
 export const runtime = "nodejs";
 
@@ -9,6 +11,12 @@ export async function POST(
   request: Request
 ) {
   try {
+    const limited = checkRateLimit(request, "organization-logo", 5, 60_000);
+    if (limited) return limited;
+    const authContext = await getAdminApiContext();
+    if (authContext.response) return authContext.response;
+    const organization = authContext.auth!.organization;
+
     const formData =
       await request.formData();
 
@@ -32,7 +40,6 @@ export async function POST(
       "image/png",
       "image/jpeg",
       "image/webp",
-      "image/svg+xml",
     ];
 
     if (
@@ -70,9 +77,6 @@ export async function POST(
       );
     }
 
-    const organization =
-      await prisma.organization.findFirst();
-
     if (!organization) {
       return NextResponse.json(
         {
@@ -86,40 +90,15 @@ export async function POST(
       );
     }
 
-    const extension =
-      path
-        .extname(file.name)
-        .toLowerCase();
-
-    const fileName =
-      `organization-document-logo-${Date.now()}${extension}`;
-
-    const bytes =
-      await file.arrayBuffer();
-
-    const buffer =
-      Buffer.from(bytes);
-
-    const uploadsDirectory =
-      path.join(
-        process.cwd(),
-        "public",
-        "uploads"
-      );
-
-    const uploadPath =
-      path.join(
-        uploadsDirectory,
-        fileName
-      );
-
-    await writeFile(
-      uploadPath,
-      buffer
+    const buffer = Buffer.from(await file.arrayBuffer());
+    let safeImage;
+    try { safeImage = validateImageUpload(buffer, file); }
+    catch { return NextResponse.json({ ok: false, message: "Imagem inválida ou com dimensões inseguras." }, { status: 400 }); }
+    const documentLogoUrl = await uploadPublicObject(
+      `organizations/${organization.id}/assets/document-logo${safeImage.extension}`,
+      buffer,
+      safeImage.mime
     );
-
-    const documentLogoUrl =
-      `/uploads/${fileName}`;
 
     const updatedOrganization =
       await prisma.organization.update({

@@ -149,7 +149,7 @@ export default function EditarDocumentoPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, fileUrl: undefined }),
       });
 
       const data = await response.json();
@@ -389,11 +389,9 @@ export default function EditarDocumentoPage() {
               <input
                 type="text"
                 value={form.fileUrl}
-                onChange={(e) =>
-                  updateField("fileUrl", e.target.value)
-                }
-                placeholder="https://..."
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                readOnly
+                placeholder="Nenhum arquivo armazenado"
+                className="w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-500"
               />
             </div>
 

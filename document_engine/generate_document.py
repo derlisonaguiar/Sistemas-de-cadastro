@@ -5,10 +5,14 @@ from pathlib import Path
 from docxtpl import DocxTemplate, InlineImage
 from docx.shared import Mm
 from PIL import Image
+from jinja2 import StrictUndefined
+from jinja2.sandbox import SandboxedEnvironment
+from template_security import extract_docx_xml, validate_template_syntax
 
 
 MAX_LOGO_WIDTH_MM = 50
 MAX_LOGO_HEIGHT_MM = 25
+MAX_IMAGE_PIXELS = 25_000_000
 
 
 def normalize_empty_values(value):
@@ -49,7 +53,13 @@ def calculate_logo_size(
     """
 
     with Image.open(image_path) as image:
+        image.verify()
+
+    with Image.open(image_path) as image:
         width_px, height_px = image.size
+
+    if width_px * height_px > MAX_IMAGE_PIXELS:
+        raise ValueError("IMAGE_DIMENSIONS_TOO_LARGE")
 
     if width_px <= 0 or height_px <= 0:
         return max_width_mm, max_height_mm
@@ -149,15 +159,19 @@ def generate_document(
         str(template)
     )
 
+    validate_template_syntax(extract_docx_xml(template))
+
     add_logo_to_context(
         doc,
         context,
         logo_path,
     )
 
-    doc.render(
-        context
-    )
+    environment = SandboxedEnvironment(undefined=StrictUndefined, autoescape=False)
+    environment.filters.clear()
+    environment.globals.clear()
+    environment.tests.clear()
+    doc.render(context, jinja_env=environment)
 
     output.parent.mkdir(
         parents=True,

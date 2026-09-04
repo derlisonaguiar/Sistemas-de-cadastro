@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getAdminApiContext } from "@/lib/auth";
+import { checkRateLimit, internalErrorResponse, parseJsonRequest } from "@/lib/api";
+import { documentGenerationSchema } from "@/lib/validation";
+import { createSignedStorageUrl, downloadStorageObject, removeStorageObject, uploadPrivateObject } from "@/lib/storage";
 
 import fs from "fs/promises";
 import path from "path";
+import os from "os";
+import { randomUUID } from "crypto";
 
 import { execFile } from "child_process";
 import { promisify } from "util";
@@ -10,8 +16,6 @@ import { promisify } from "util";
 export const runtime = "nodejs";
 
 const execFileAsync = promisify(execFile);
-
-type ManualValues = Record<string, string>;
 
 type PythonResult = {
   ok: boolean;
@@ -123,7 +127,8 @@ async function generateWithPython(
     {
       cwd: process.cwd(),
       windowsHide: true,
-      maxBuffer: 10 * 1024 * 1024,
+      timeout: 30_000,
+      maxBuffer: 1024 * 1024,
     }
   );
 
@@ -186,24 +191,20 @@ export async function POST(
   request: Request
 ) {
   let temporaryDataPath: string | null = null;
+  let workingDirectory: string | null = null;
+  let generatedStorageRef: string | null = null;
 
   try {
-    const body = await request.json();
+    const limited = checkRateLimit(request, "document-generate", 10, 60_000);
+    if (limited) return limited;
+    const authContext = await getAdminApiContext();
+    if (authContext.response) return authContext.response;
+    const organizationId = authContext.auth!.profile.organizationId;
 
-    const templateId =
-      body.templateId?.toString().trim() || "";
-
-    const memberId =
-      body.memberId?.toString().trim() || "";
-
-    const representativeId =
-      body.representativeId?.toString().trim() || "";
-
-    const manualValues: ManualValues =
-      body.manualValues &&
-      typeof body.manualValues === "object"
-        ? body.manualValues
-        : {};
+    const parsed = await parseJsonRequest(request, documentGenerationSchema);
+    if (parsed.response) return parsed.response;
+    const { templateId, memberId, manualValues } = parsed.data!;
+    const representativeId = parsed.data!.representativeId || "";
 
     if (!templateId) {
       return NextResponse.json(
@@ -230,9 +231,10 @@ export async function POST(
     }
 
     const template =
-      await prisma.documentTemplate.findUnique({
+      await prisma.documentTemplate.findFirst({
         where: {
           id: templateId,
+          organizationId,
         },
 
         include: {
@@ -275,6 +277,13 @@ export async function POST(
         {
           status: 400,
         }
+      );
+    }
+
+    if (template.sourceType !== "DOCX" || template.processingStatus !== "READY") {
+      return NextResponse.json(
+        { ok: false, message: "Este modelo ainda não está pronto para geração DOCX." },
+        { status: 400 }
       );
     }
 
@@ -377,10 +386,16 @@ export async function POST(
       }
     }
 
-    const templatePath =
-      getLocalPublicPath(
-        template.originalFileUrl
-      );
+    workingDirectory = await fs.mkdtemp(path.join(os.tmpdir(), "document-generation-"));
+    let templatePath = getLocalPublicPath(template.originalFileUrl);
+
+    if (!templatePath) {
+      const storedTemplate = await downloadStorageObject(template.originalFileUrl);
+      if (storedTemplate) {
+        templatePath = path.join(workingDirectory, "template.docx");
+        await fs.writeFile(templatePath, storedTemplate);
+      }
+    }
 
     if (
       !templatePath ||
@@ -405,10 +420,15 @@ export async function POST(
         .logoUrl ||
       null;
 
-    let logoPath =
-      getLocalPublicPath(
-        selectedLogoUrl
-      );
+    let logoPath = getLocalPublicPath(selectedLogoUrl);
+
+    if (!logoPath && selectedLogoUrl) {
+      const storedLogo = await downloadStorageObject(selectedLogoUrl);
+      if (storedLogo) {
+        logoPath = path.join(workingDirectory, "logo");
+        await fs.writeFile(logoPath, storedLogo);
+      }
+    }
 
     if (
       logoPath &&
@@ -650,6 +670,18 @@ export async function POST(
             }
           : {},
 
+      client: {
+        name: "", companyName: "", cpfCnpj: "", email: "", phone: "", contactName: "", address: "",
+      },
+
+      project: {
+        name: "", description: "", startDate: "", endDate: "", budget: "",
+      },
+
+      contract: {
+        title: "", contractNumber: "", value: "", startDate: "", endDate: "",
+      },
+
       system: {
         currentDate:
           new Intl.DateTimeFormat(
@@ -663,52 +695,13 @@ export async function POST(
         manualValues,
     };
 
-    const generatedDirectory =
-      path.join(
-        process.cwd(),
-        "public",
-        "uploads",
-        "generated-documents"
-      );
-
-    const temporaryDirectory =
-      path.join(
-        process.cwd(),
-        "document_engine",
-        "tmp"
-      );
-
-    await fs.mkdir(
-      generatedDirectory,
-      {
-        recursive: true,
-      }
-    );
-
-    await fs.mkdir(
-      temporaryDirectory,
-      {
-        recursive: true,
-      }
-    );
-
-    const safeMemberName =
-      member.fullName
-        .normalize("NFD")
-        .replace(
-          /[\u0300-\u036f]/g,
-          ""
-        )
-        .replace(
-          /[^a-zA-Z0-9_-]/g,
-          "_"
-        );
+    const generatedDirectory = workingDirectory;
+    const temporaryDirectory = workingDirectory;
 
     const timestamp =
       Date.now();
 
-    const generatedFileName =
-      `${timestamp}-${safeMemberName}.docx`;
+    const generatedFileName = "generated.docx";
 
     const generatedFilePath =
       path.join(
@@ -757,12 +750,17 @@ export async function POST(
       );
     }
 
-    const generatedDocxUrl =
-      `/uploads/generated-documents/${generatedFileName}`;
+    const documentId = randomUUID();
+    generatedStorageRef = await uploadPrivateObject(
+      `organizations/${template.organizationId}/documents/${documentId}/generated.docx`,
+      await fs.readFile(generatedFilePath),
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    );
 
     const document =
       await prisma.document.create({
         data: {
+          id: documentId,
           organizationId:
             template.organizationId,
 
@@ -814,9 +812,12 @@ export async function POST(
                 selectedLogoUrl,
             }),
 
-          generatedDocxUrl,
+          generatedDocxUrl: generatedStorageRef,
         },
       });
+
+    const storedGeneratedReference = generatedStorageRef;
+    generatedStorageRef = null;
 
     console.log(
       "Documento gerado pelo Python:",
@@ -845,14 +846,20 @@ export async function POST(
       message:
         "Documento gerado com sucesso.",
 
-      document,
+      document: {
+        ...document,
+        generatedDocxUrl: await createSignedStorageUrl(storedGeneratedReference),
+      },
 
-      generatedDocxUrl,
+      generatedDocxUrl: await createSignedStorageUrl(storedGeneratedReference),
 
       logoUsed:
         selectedLogoUrl,
     });
   } catch (error) {
+    if (generatedStorageRef) {
+      await removeStorageObject(generatedStorageRef).catch(() => undefined);
+    }
     if (temporaryDataPath) {
       await fs
         .unlink(
@@ -866,19 +873,10 @@ export async function POST(
       error
     );
 
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Erro ao gerar documento.";
-
-    return NextResponse.json(
-      {
-        ok: false,
-        message,
-      },
-      {
-        status: 500,
-      }
-    );
+    return internalErrorResponse();
+  } finally {
+    if (workingDirectory) {
+      await fs.rm(workingDirectory, { recursive: true, force: true }).catch(() => undefined);
+    }
   }
 }

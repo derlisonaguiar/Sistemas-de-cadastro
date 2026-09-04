@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getAdminApiContext } from "@/lib/auth";
+import { parseJsonRequest } from "@/lib/api";
+import { routeIdSchema, templateFieldSchema } from "@/lib/validation";
+import { createSignedStorageUrl, removeStorageObject } from "@/lib/storage";
 
 import fs from "fs/promises";
 import path from "path";
@@ -49,19 +53,6 @@ const allowedMappedPaths = [
   "manual",
 ];
 
-const allowedFieldTypes = [
-  "TEXT",
-  "NUMBER",
-  "DATE",
-  "CPF",
-  "CNPJ",
-  "EMAIL",
-  "PHONE",
-  "ADDRESS",
-  "CURRENCY",
-  "BOOLEAN",
-];
-
 export async function GET(
   request: Request,
   context: {
@@ -71,12 +62,18 @@ export async function GET(
   }
 ) {
   try {
-    const { id } = await context.params;
+    const authContext = await getAdminApiContext();
+    if (authContext.response) return authContext.response;
+    const organizationId = authContext.auth!.profile.organizationId;
+    const params = routeIdSchema.safeParse(await context.params);
+    if (!params.success) return NextResponse.json({ ok: false, message: "ID inválido." }, { status: 400 });
+    const { id } = params.data;
 
     const template =
-      await prisma.documentTemplate.findUnique({
+      await prisma.documentTemplate.findFirst({
         where: {
           id,
+          organizationId,
         },
         include: {
           fields: {
@@ -101,7 +98,12 @@ export async function GET(
 
     return NextResponse.json({
       ok: true,
-      template,
+      template: {
+        ...template,
+        originalFileUrl: template.originalFileUrl
+          ? await createSignedStorageUrl(template.originalFileUrl)
+          : null,
+      },
     });
   } catch (error) {
     console.error(
@@ -131,11 +133,16 @@ export async function PUT(
   }
 ) {
   try {
-    const { id } = await context.params;
-    const body = await request.json();
-
-    const fieldId =
-      body.fieldId?.toString() || "";
+    const authContext = await getAdminApiContext();
+    if (authContext.response) return authContext.response;
+    const organizationId = authContext.auth!.profile.organizationId;
+    const params = routeIdSchema.safeParse(await context.params);
+    if (!params.success) return NextResponse.json({ ok: false, message: "ID inválido." }, { status: 400 });
+    const { id } = params.data;
+    const parsed = await parseJsonRequest(request, templateFieldSchema);
+    if (parsed.response) return parsed.response;
+    const body = parsed.data!;
+    const fieldId = body.fieldId;
 
     if (!fieldId) {
       return NextResponse.json(
@@ -151,9 +158,10 @@ export async function PUT(
     }
 
     const template =
-      await prisma.documentTemplate.findUnique({
+      await prisma.documentTemplate.findFirst({
         where: {
           id,
+          organizationId,
         },
       });
 
@@ -193,9 +201,10 @@ export async function PUT(
 
     const updateData: {
       label?: string;
-      type?: any;
+      type?: "TEXT" | "NUMBER" | "DATE" | "CPF" | "CNPJ" | "EMAIL" | "PHONE" | "ADDRESS" | "CURRENCY" | "BOOLEAN";
       required?: boolean;
       mappedPath?: string | null;
+      confirmed?: boolean;
     } = {};
 
     if (body.label !== undefined) {
@@ -219,23 +228,7 @@ export async function PUT(
     }
 
     if (body.type !== undefined) {
-      const type =
-        body.type?.toString() || "";
-
-      if (!allowedFieldTypes.includes(type)) {
-        return NextResponse.json(
-          {
-            ok: false,
-            message:
-              "Tipo de campo inválido.",
-          },
-          {
-            status: 400,
-          }
-        );
-      }
-
-      updateData.type = type;
+      updateData.type = body.type;
     }
 
     if (body.required !== undefined) {
@@ -266,6 +259,8 @@ export async function PUT(
         mappedPath || null;
     }
 
+    updateData.confirmed = true;
+
     const updatedField =
       await prisma.documentTemplateField.update({
         where: {
@@ -273,6 +268,17 @@ export async function PUT(
         },
         data: updateData,
       });
+
+    const pendingFields = await prisma.documentTemplateField.count({
+      where: { templateId: id, OR: [{ confirmed: false }, { mappedPath: null }] },
+    });
+
+    if (pendingFields === 0) {
+      await prisma.documentTemplate.update({
+        where: { id: template.id },
+        data: { processingStatus: "READY", active: true, confirmedAt: new Date() },
+      });
+    }
 
     return NextResponse.json({
       ok: true,
@@ -308,12 +314,18 @@ export async function DELETE(
   }
 ) {
   try {
-    const { id } = await context.params;
+    const authContext = await getAdminApiContext();
+    if (authContext.response) return authContext.response;
+    const organizationId = authContext.auth!.profile.organizationId;
+    const params = routeIdSchema.safeParse(await context.params);
+    if (!params.success) return NextResponse.json({ ok: false, message: "ID inválido." }, { status: 400 });
+    const { id } = params.data;
 
     const template =
-      await prisma.documentTemplate.findUnique({
+      await prisma.documentTemplate.findFirst({
         where: {
           id,
+          organizationId,
         },
         include: {
           documents: {
@@ -363,20 +375,13 @@ export async function DELETE(
      */
     if (template.originalFileUrl) {
       try {
-        const relativePath =
-          template.originalFileUrl.replace(
-            /^\/+/,
-            ""
-          );
-
-        const absolutePath =
-          path.join(
-            process.cwd(),
-            "public",
-            relativePath
-          );
-
-        await fs.unlink(absolutePath);
+        if (template.originalFileUrl.startsWith("storage://")) {
+          await removeStorageObject(template.originalFileUrl);
+        } else {
+          const relativePath = template.originalFileUrl.replace(/^\/+/, "");
+          const absolutePath = path.join(process.cwd(), "public", relativePath);
+          await fs.unlink(absolutePath);
+        }
       } catch (fileError) {
         console.warn(
           "Modelo excluído do banco, mas não foi possível remover o arquivo físico:",

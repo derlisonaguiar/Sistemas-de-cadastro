@@ -1,12 +1,25 @@
 import type { ReactNode } from "react";
 import AdminSidebar from "@/components/AdminSidebar";
 import AdminHeader from "@/components/AdminHeader";
+import { redirect } from "next/navigation";
+import { AuthError, requireAdminProfile } from "@/lib/auth";
 
 type AdminLayoutProps = {
   children: ReactNode;
 };
 
-export default function AdminLayout({ children }: AdminLayoutProps) {
+export default async function AdminLayout({ children }: AdminLayoutProps) {
+  try {
+    await requireAdminProfile();
+  } catch (error) {
+    if (error instanceof AuthError) {
+      if (error.code === "UNAUTHORIZED") redirect("/login");
+      if (error.code === "PROFILE_REQUIRED") redirect("/vincular");
+      redirect("/acesso-negado");
+    }
+    throw error;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="flex min-h-screen">

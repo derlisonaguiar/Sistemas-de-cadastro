@@ -1,44 +1,18 @@
 import { NextResponse } from "next/server";
 
 import {
-  getAuthenticatedProfile,
-  requireAdminProfile,
+  getAdminApiContext,
 } from "@/lib/auth";
 
 import { prisma } from "@/lib/prisma";
-
-function unauthorizedResponse() {
-  return NextResponse.json(
-    {
-      ok: false,
-      message: "Não autenticado.",
-    },
-    {
-      status: 401,
-    }
-  );
-}
-
-function forbiddenResponse() {
-  return NextResponse.json(
-    {
-      ok: false,
-      message: "Acesso não autorizado.",
-    },
-    {
-      status: 403,
-    }
-  );
-}
+import { parseJsonRequest } from "@/lib/api";
+import { organizationSchema } from "@/lib/validation";
 
 export async function GET() {
   try {
-    const auth =
-      await getAuthenticatedProfile();
-
-    if (!auth) {
-      return unauthorizedResponse();
-    }
+    const authContext = await getAdminApiContext();
+    if (authContext.response) return authContext.response;
+    const auth = authContext.auth!;
 
     const organization =
       await prisma.organization.findUnique({
@@ -119,6 +93,9 @@ export async function GET() {
 }
 
 export async function POST() {
+  const authContext = await getAdminApiContext();
+  if (authContext.response) return authContext.response;
+
   return NextResponse.json(
     {
       ok: false,
@@ -135,31 +112,13 @@ export async function PUT(
   request: Request
 ) {
   try {
-    let auth;
+    const authContext = await getAdminApiContext();
+    if (authContext.response) return authContext.response;
+    const auth = authContext.auth!;
 
-    try {
-      auth =
-        await requireAdminProfile();
-    } catch (error) {
-      if (
-        error instanceof Error &&
-        error.message === "UNAUTHORIZED"
-      ) {
-        return unauthorizedResponse();
-      }
-
-      if (
-        error instanceof Error &&
-        error.message === "FORBIDDEN"
-      ) {
-        return forbiddenResponse();
-      }
-
-      throw error;
-    }
-
-    const data =
-      await request.json();
+    const parsed = await parseJsonRequest(request, organizationSchema);
+    if (parsed.response) return parsed.response;
+    const data = parsed.data!;
 
     const organization =
       await prisma.organization.findUnique({

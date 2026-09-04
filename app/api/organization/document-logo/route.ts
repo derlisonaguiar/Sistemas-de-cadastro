@@ -1,13 +1,21 @@
 import { NextResponse } from "next/server";
-import { mkdir, writeFile } from "fs/promises";
-import path from "path";
 
 import { prisma } from "@/lib/prisma";
+import { getAdminApiContext } from "@/lib/auth";
+import { checkRateLimit } from "@/lib/api";
+import { validateImageUpload } from "@/lib/file-security";
+import { uploadPublicObject } from "@/lib/storage";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
+    const limited = checkRateLimit(request, "organization-document-logo", 5, 60_000);
+    if (limited) return limited;
+    const authContext = await getAdminApiContext();
+    if (authContext.response) return authContext.response;
+    const organization = authContext.auth!.organization;
+
     const formData =
       await request.formData();
 
@@ -30,7 +38,6 @@ export async function POST(request: Request) {
       "image/png",
       "image/jpeg",
       "image/webp",
-      "image/svg+xml",
     ];
 
     if (!allowedTypes.includes(file.type)) {
@@ -62,9 +69,6 @@ export async function POST(request: Request) {
       );
     }
 
-    const organization =
-      await prisma.organization.findFirst();
-
     if (!organization) {
       return NextResponse.json(
         {
@@ -78,47 +82,15 @@ export async function POST(request: Request) {
       );
     }
 
-    const extension =
-      path
-        .extname(file.name)
-        .toLowerCase();
-
-    const fileName =
-      `organization-document-logo-${Date.now()}${extension}`;
-
-    const uploadsDirectory =
-      path.join(
-        process.cwd(),
-        "public",
-        "uploads"
-      );
-
-    await mkdir(
-      uploadsDirectory,
-      {
-        recursive: true,
-      }
+    const buffer = Buffer.from(await file.arrayBuffer());
+    let safeImage;
+    try { safeImage = validateImageUpload(buffer, file); }
+    catch { return NextResponse.json({ ok: false, message: "Imagem inválida ou com dimensões inseguras." }, { status: 400 }); }
+    const documentLogoUrl = await uploadPublicObject(
+      `organizations/${organization.id}/assets/document-logo${safeImage.extension}`,
+      buffer,
+      safeImage.mime
     );
-
-    const uploadPath =
-      path.join(
-        uploadsDirectory,
-        fileName
-      );
-
-    const bytes =
-      await file.arrayBuffer();
-
-    const buffer =
-      Buffer.from(bytes);
-
-    await writeFile(
-      uploadPath,
-      buffer
-    );
-
-    const documentLogoUrl =
-      `/uploads/${fileName}`;
 
     const updatedOrganization =
       await prisma.organization.update({

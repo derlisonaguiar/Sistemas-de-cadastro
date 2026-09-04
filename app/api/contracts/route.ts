@@ -1,19 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getAdminApiContext } from "@/lib/auth";
+import { parseJsonRequest } from "@/lib/api";
+import { contractSchema } from "@/lib/validation";
 
 export async function GET() {
   try {
-    const organization = await prisma.organization.findFirst();
-
-    if (!organization) {
-      return NextResponse.json(
-        {
-          ok: false,
-          message: "Organização não encontrada.",
-        },
-        { status: 404 }
-      );
-    }
+    const authContext = await getAdminApiContext();
+    if (authContext.response) return authContext.response;
+    const organization = authContext.auth!.organization;
 
     const contracts = await prisma.contract.findMany({
       where: {
@@ -47,19 +42,13 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const organization = await prisma.organization.findFirst();
+    const authContext = await getAdminApiContext();
+    if (authContext.response) return authContext.response;
+    const organization = authContext.auth!.organization;
 
-    if (!organization) {
-      return NextResponse.json(
-        {
-          ok: false,
-          message: "Organização não encontrada.",
-        },
-        { status: 404 }
-      );
-    }
-
-    const data = await request.json();
+    const parsed = await parseJsonRequest(request, contractSchema);
+    if (parsed.response) return parsed.response;
+    const data = parsed.data!;
 
     if (!data.title || !data.title.trim()) {
       return NextResponse.json(
@@ -129,8 +118,7 @@ export async function POST(request: Request) {
 
         value:
           data.value !== undefined &&
-          data.value !== null &&
-          data.value !== ""
+          data.value !== null
             ? data.value
             : null,
 

@@ -54,16 +54,48 @@ export async function proxy(request: NextRequest) {
   const pathname =
     request.nextUrl.pathname;
 
+  const isMutation = ["POST", "PUT", "PATCH", "DELETE"].includes(request.method);
+  if (pathname.startsWith("/api/") && isMutation) {
+    const origin = request.headers.get("origin");
+    const host = request.headers.get("x-forwarded-host") || request.headers.get("host");
+    let sameOrigin = false;
+
+    try {
+      sameOrigin = Boolean(origin && host && new URL(origin).host === host);
+    } catch {
+      sameOrigin = false;
+    }
+
+    if (!sameOrigin) {
+      return NextResponse.json(
+        { ok: false, message: "Origem da requisição não autorizada." },
+        { status: 403 }
+      );
+    }
+  }
+
   const isAdminRoute =
     pathname.startsWith("/admin");
+
+  const isAdministrativeApi =
+    pathname.startsWith("/api/") &&
+    !pathname.startsWith("/api/auth/link") &&
+    !pathname.startsWith("/api/auth/login") &&
+    !pathname.startsWith("/api/health/");
 
   const isLoginRoute =
     pathname === "/login";
 
   if (
-    isAdminRoute &&
+    (isAdminRoute || isAdministrativeApi) &&
     !user
   ) {
+    if (isAdministrativeApi) {
+      return NextResponse.json(
+        { ok: false, message: "Não autenticado." },
+        { status: 401 }
+      );
+    }
     const url =
       request.nextUrl.clone();
 
@@ -94,6 +126,7 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     "/admin/:path*",
+    "/api/:path*",
     "/login",
   ],
 };
