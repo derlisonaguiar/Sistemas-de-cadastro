@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import MemberStatusDialog, { memberStatusLabels as statusLabels } from "@/components/MemberStatusDialog";
 import { useEffect, useState } from "react";
 
 type Directorate = {
@@ -33,15 +34,9 @@ type Organization = {
   primaryColor: string;
 };
 
-const statusLabels = {
-  ACTIVE: "Ativo",
-  INACTIVE: "Inativo",
-  LEAVE: "Afastado",
-  ALUMNI: "Egresso",
-  POS_JR: "Pós-Jr",
-};
-
 export default function MembrosPage() {
+  const [statusMember, setStatusMember] = useState<Member | null>(null);
+  const [statusMessage, setStatusMessage] = useState("");
   const [members, setMembers] = useState<Member[]>([]);
   const [organization, setOrganization] =
     useState<Organization | null>(null);
@@ -144,6 +139,12 @@ export default function MembrosPage() {
 
   return (
     <div>
+      {statusMessage && <p role="status" className="mb-4 text-sm text-green-700">{statusMessage}</p>}
+      {statusMember && <MemberStatusDialog member={statusMember} onClose={() => setStatusMember(null)} onUpdated={(updated) => {
+        setMembers((current) => current.map((member) => member.id === updated.id ? updated : member));
+        setStatusMember(null);
+        setStatusMessage("Status atualizado com sucesso.");
+      }} />}
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">
@@ -273,13 +274,13 @@ export default function MembrosPage() {
                       </td>
 
                       <td className="px-4 py-3">
-                        <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700">
+                        <button type="button" aria-label={`Alterar status de ${member.fullName}: ${statusLabels[member.status]}`} onClick={() => { setStatusMessage(""); setStatusMember(member); }} className="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200 focus-visible:outline-2">
                           {
                             statusLabels[
                               member.status
                             ]
                           }
-                        </span>
+                        </button>
                       </td>
 
                       <td className="px-4 py-3">

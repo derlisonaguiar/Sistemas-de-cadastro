@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 type Directorate = {
@@ -755,10 +754,10 @@ export default function NovoMembroPage() {
             </div>
 
             {directorates.length === 0 && (
-              <p className="text-sm text-gray-700">Nenhuma diretoria cadastrada. <Link className="text-purple-700 underline" href="/admin/configuracoes/diretorias" target="_blank" rel="noopener noreferrer">Cadastrar diretoria</Link>. Recarregue este formulário após cadastrar.</p>
+              <p className="text-sm text-gray-700">Nenhuma diretoria cadastrada.</p>
             )}
-            {availablePositions.length === 0 && (
-              <p className="text-sm text-gray-700">{positions.length === 0 ? "Nenhum cargo cadastrado." : "Nenhum cargo disponível para esta diretoria."} <Link className="text-purple-700 underline" href="/admin/configuracoes/cargos" target="_blank" rel="noopener noreferrer">Cadastrar cargo</Link>. Recarregue este formulário após cadastrar.</p>
+            {positions.length === 0 && (
+              <p className="text-sm text-gray-700">Nenhum cargo cadastrado.</p>
             )}
             {form.status === "POS_JR" && (
               <p className="md:col-span-2 text-sm text-gray-700">Pós-Jr não ocupa cargo ou diretoria. Ao salvar, o vínculo anterior ficará no histórico do membro e seus documentos serão preservados.</p>

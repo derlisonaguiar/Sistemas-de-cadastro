@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 
+import { updateMember } from "@/lib/member-update";
 import { prisma } from "@/lib/prisma";
 import { getAdminApiContext } from "@/lib/auth";
-import { databaseErrorResponse, parseJsonRequest } from "@/lib/api";
+import { checkRateLimit, databaseErrorResponse, parseJsonRequest } from "@/lib/api";
+import { verifyAdminPassword } from "@/lib/admin-password";
+import { z } from "zod";
 import { memberSchema, routeIdSchema } from "@/lib/validation";
 
 type RouteContext = {
@@ -10,6 +13,35 @@ type RouteContext = {
     id: string;
   }>;
 };
+
+const statusChangeSchema = z.object({
+  status: z.enum(["ACTIVE", "INACTIVE", "LEAVE", "ALUMNI", "POS_JR"]),
+  password: z.string().min(1).max(1024),
+}).strict();
+
+export async function PATCH(request: Request, context: RouteContext) {
+  try {
+    const authContext = await getAdminApiContext();
+    if (authContext.response) return authContext.response;
+    const { user, profile } = authContext.auth!;
+    const limited = checkRateLimit(request, `member-status:${user.id}`, 5, 15 * 60_000);
+    if (limited) return limited;
+    const params = routeIdSchema.safeParse(await context.params);
+    if (!params.success) return NextResponse.json({ ok: false, message: "ID inválido." }, { status: 400 });
+    const parsed = await parseJsonRequest(request, statusChangeSchema);
+    if (parsed.response) return parsed.response;
+    const where = { id: params.data.id, organizationId: profile.organizationId };
+    const existingMember = await prisma.member.findFirst({ where, select: { id: true } });
+    if (!existingMember) return NextResponse.json({ ok: false, message: "Membro não encontrado." }, { status: 404 });
+    if (!await verifyAdminPassword(user, parsed.data!.password)) {
+      return NextResponse.json({ ok: false, message: "Não foi possível confirmar a alteração." }, { status: 401 });
+    }
+    const member = await updateMember({ where, data: { status: parsed.data!.status } });
+    return NextResponse.json({ ok: true, member, message: "Status atualizado com sucesso." });
+  } catch (error) {
+    return databaseErrorResponse(error);
+  }
+}
 
 export async function GET(
   request: Request,
@@ -350,9 +382,9 @@ export async function PUT(
     }
 
     const member =
-      await prisma.member.update({
+      await updateMember({
         where: {
-          id: existingMember.id,
+          id: existingMember.id, organizationId: organization.id,
         },
         data: {
           fullName,

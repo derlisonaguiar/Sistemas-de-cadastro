@@ -18,7 +18,6 @@ const menuItems = [
   { label: "Contratos", href: "/admin/contratos" },
   { label: "Documentos", href: "/admin/documentos" },
   { label: "Projetos", href: "/admin/projetos" },
-  { label: "Configurações", href: "/admin/configuracoes" },
 ];
 
 export default function AdminSidebar() {
@@ -125,6 +124,24 @@ export default function AdminSidebar() {
               </li>
             );
           })}
+          <li className="pt-3">
+            <p className="px-3 py-2 text-sm font-semibold text-gray-900">Configurações</p>
+            <ul className="ml-3 space-y-1">
+              {[
+                { label: "Organização", href: "/admin/configuracoes" },
+                { label: "Diretorias", href: "/admin/configuracoes/diretorias" },
+                { label: "Cargos", href: "/admin/configuracoes/cargos" },
+              ].map((item) => (
+                <li key={item.href}>
+                  <Link href={item.href} aria-current={pathname === item.href ? "page" : undefined}
+                    className="block rounded-md px-3 py-2 text-sm font-medium hover:bg-gray-50"
+                    style={pathname === item.href ? { backgroundColor: primaryColor + "14", color: primaryColor } : { color: "#000000" }}>
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </li>
         </ul>
       </nav>
     </aside>
