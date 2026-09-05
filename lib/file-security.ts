@@ -66,6 +66,7 @@ export function validateImageUpload(buffer: Buffer, file: File) {
   let mime: string;
 
   if (buffer.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) {
+    if (buffer.length < 33 || buffer.subarray(12, 16).toString("ascii") !== "IHDR") throw new Error("INVALID_PNG_STRUCTURE");
     width = buffer.readUInt32BE(16); height = buffer.readUInt32BE(20); extension = ".png"; mime = "image/png";
   } else if (buffer[0] === 0xff && buffer[1] === 0xd8) {
     extension = ".jpg"; mime = "image/jpeg";

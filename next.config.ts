@@ -16,7 +16,10 @@ const nextConfig: NextConfig = {
       });
     }
 
-    return [{ source: "/(.*)", headers }];
+    return [
+      { source: "/(.*)", headers },
+      { source: "/api/:path*", headers: [{ key: "Cache-Control", value: "private, no-store" }] },
+    ];
   },
 };
 

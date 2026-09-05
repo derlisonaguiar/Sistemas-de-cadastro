@@ -56,7 +56,11 @@ function getLocalPublicPath(
     return null;
   }
 
+  if (!url.startsWith("/uploads/")) return null;
   const relativePath = url.replace(/^\/+/, "");
+  const resolved = path.resolve(process.cwd(), "public", relativePath);
+  const root = path.resolve(process.cwd(), "public", "uploads") + path.sep;
+  if (!resolved.startsWith(root)) return null;
 
   return path.join(
     process.cwd(),

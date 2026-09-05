@@ -1,0 +1,2 @@
+ALTER TABLE "Document" ADD COLUMN "signedFile" TEXT,
+ADD COLUMN "signedAt" TIMESTAMP(3);

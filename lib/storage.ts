@@ -43,7 +43,18 @@ export async function uploadPublicObject(objectPath: string, data: Buffer, conte
 }
 
 export async function downloadStorageObject(reference: string) {
-  const parsed = parseStorageReference(reference);
+  let parsed = parseStorageReference(reference);
+  // Logos uploaded by this application are public Supabase assets, not local files.
+  if (!parsed && process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    try {
+      const url = new URL(reference);
+      const base = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL);
+      const prefix = `/storage/v1/object/public/${PUBLIC_ASSETS_BUCKET}/`;
+      if (url.origin === base.origin && url.pathname.startsWith(prefix)) {
+        parsed = { bucket: PUBLIC_ASSETS_BUCKET, path: decodeURIComponent(url.pathname.slice(prefix.length)) };
+      }
+    } catch { return null; }
+  }
   if (!parsed) return null;
   const { data, error } = await adminClient().storage.from(parsed.bucket).download(parsed.path);
   if (error || !data) throw new Error("Arquivo privado não encontrado.");
@@ -52,7 +63,7 @@ export async function downloadStorageObject(reference: string) {
 
 export async function createSignedStorageUrl(reference: string, expiresIn = 300) {
   const parsed = parseStorageReference(reference);
-  if (!parsed) return reference;
+  if (!parsed) throw new Error("Arquivo privado legado precisa ser migrado para Storage.");
   const { data, error } = await adminClient().storage.from(parsed.bucket).createSignedUrl(parsed.path, expiresIn);
   if (error || !data) throw new Error("Não foi possível autorizar o download.");
   return data.signedUrl;

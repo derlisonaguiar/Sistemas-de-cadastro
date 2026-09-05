@@ -48,6 +48,14 @@ export function checkRateLimit(request: Request, scope: string, limit: number, w
   const address = forwarded || request.headers.get("x-real-ip") || "unknown";
   const key = `${scope}:${address}`;
   const now = Date.now();
+  if (rateStore.size >= 10_000) {
+    for (const [entryKey, entry] of rateStore) {
+      if (entry.resetAt <= now) rateStore.delete(entryKey);
+    }
+    if (rateStore.size >= 10_000 && !rateStore.has(key)) {
+      return NextResponse.json({ ok: false, message: "Tente novamente mais tarde." }, { status: 429 });
+    }
+  }
   const current = rateStore.get(key);
 
   if (!current || current.resetAt <= now) {

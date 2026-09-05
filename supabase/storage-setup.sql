@@ -6,7 +6,7 @@ VALUES (
   'private-documents',
   false,
   10485760,
-  ARRAY['application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/pdf']
+  ARRAY['application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/pdf', 'image/png', 'image/jpeg']
 )
 ON CONFLICT (id) DO UPDATE SET
   public = EXCLUDED.public,

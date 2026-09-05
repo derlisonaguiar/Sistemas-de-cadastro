@@ -15,7 +15,10 @@ export async function POST(request: Request) {
     const auth = await getAdminApiContext(); if (auth.response) return auth.response;
     const form = await request.formData(); const file = form.get("file");
     if (!(file instanceof File) || file.size <= 0 || file.size > MAX_IMAGE_BYTES) return NextResponse.json({ ok: false, message: "Imagem inválida ou acima do limite." }, { status: 400 });
-    const buffer = Buffer.from(await file.arrayBuffer()); const safe = validateImageUpload(buffer, file);
+    const buffer = Buffer.from(await file.arrayBuffer());
+    let safe;
+    try { safe = validateImageUpload(buffer, file); }
+    catch { return NextResponse.json({ ok: false, message: "Imagem inválida." }, { status: 400 }); }
     if (safe.mime === "image/webp") return NextResponse.json({ ok: false, message: "Use PNG ou JPEG no editor de certificados." }, { status: 400 });
     const organizationId = auth.auth!.profile.organizationId; const id = randomUUID();
     storageRef = await uploadPrivateObject(`organizations/${organizationId}/certificate-assets/${id}/image${safe.extension}`, buffer, safe.mime);

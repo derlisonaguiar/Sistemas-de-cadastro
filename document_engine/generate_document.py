@@ -167,7 +167,7 @@ def generate_document(
         logo_path,
     )
 
-    environment = SandboxedEnvironment(undefined=StrictUndefined, autoescape=False)
+    environment = SandboxedEnvironment(undefined=StrictUndefined, autoescape=True)
     environment.filters.clear()
     environment.globals.clear()
     environment.tests.clear()

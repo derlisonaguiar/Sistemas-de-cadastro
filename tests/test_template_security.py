@@ -55,5 +55,25 @@ class TemplateSecurityTests(unittest.TestCase):
             rendered = Document(output)
             self.assertIn("Pessoa Teste", "\n".join(p.text for p in rendered.paragraphs))
 
+    def test_document_types_and_xml_escaping(self):
+        for title, with_representative in [("Termo", True), ("Declaração", False)]:
+            with self.subTest(title=title), tempfile.TemporaryDirectory() as directory:
+                template = Path(directory) / "template.docx"
+                output = Path(directory) / "output.docx"
+                data = Path(directory) / "data.json"
+                source = Document()
+                source.add_paragraph(title + " {{ member.fullName }}")
+                context = {"member": {"fullName": "Ana & João <teste>"}}
+                if with_representative:
+                    source.add_paragraph("{{ representative.fullName }}")
+                    context["representative"] = {"fullName": "Representante Teste"}
+                source.save(template)
+                data.write_text(json.dumps(context), encoding="utf-8")
+                generate_document(str(template), str(output), str(data))
+                rendered = "\n".join(p.text for p in Document(output).paragraphs)
+                self.assertIn("Ana & João <teste>", rendered)
+                if with_representative:
+                    self.assertIn("Representante Teste", rendered)
+
 if __name__ == "__main__":
     unittest.main()

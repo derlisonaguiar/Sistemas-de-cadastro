@@ -61,6 +61,7 @@ export async function GET(
       ok: true,
       document: {
         ...document,
+        signedFile: document.signedFile ? await createSignedStorageUrl(document.signedFile) : null,
         fileUrl: document.fileUrl ? await createSignedStorageUrl(document.fileUrl) : null,
         generatedDocxUrl: document.generatedDocxUrl ? await createSignedStorageUrl(document.generatedDocxUrl) : null,
         generatedPdfUrl: document.generatedPdfUrl ? await createSignedStorageUrl(document.generatedPdfUrl) : null,

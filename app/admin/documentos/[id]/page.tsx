@@ -11,6 +11,10 @@ type Document = {
   status: string;
   description: string | null;
   fileUrl: string | null;
+  generatedDocxUrl: string | null;
+  generatedPdfUrl: string | null;
+  signedFile: string | null;
+  signedAt: string | null;
   issueDate: string | null;
   signatureDate: string | null;
 
@@ -99,6 +103,25 @@ export default function DocumentoPage() {
     useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const [uploading, setUploading] = useState(false);
+
+  async function uploadSigned(file: File) {
+    setUploading(true);
+    setMessage("");
+    try {
+      const form = new FormData();
+      form.set("file", file);
+      const response = await fetch(`/api/documents/${id}/signed`, { method: "POST", body: form });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || "Falha no envio.");
+      const refreshed = await fetch(`/api/documents/${id}`);
+      const data = await refreshed.json();
+      if (!refreshed.ok) throw new Error("Arquivo enviado. Recarregue a página para atualizar.");
+      setDocument(data.document);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Falha no envio.");
+    } finally { setUploading(false); }
+  }
 
   useEffect(() => {
     async function loadData() {
@@ -213,6 +236,21 @@ export default function DocumentoPage() {
         </div>
 
         <div className="flex flex-wrap gap-2">
+          {(document.generatedPdfUrl || document.generatedDocxUrl) && (
+            <a href={document.generatedPdfUrl || document.generatedDocxUrl || undefined} target="_blank" rel="noopener noreferrer" className="rounded-md border px-4 py-2 text-sm">Abrir original gerado</a>
+          )}
+          {document.signedFile ? (
+            <a href={document.signedFile} target="_blank" rel="noopener noreferrer" className="rounded-md border px-4 py-2 text-sm">Abrir assinado · enviado em {formatDate(document.signedAt)}</a>
+          ) : (
+            <label className="rounded-md border px-4 py-2 text-sm">
+              {uploading ? "Enviando..." : "Enviar assinado (PDF, até 10 MB)"}
+              <input type="file" accept="application/pdf,.pdf" disabled={uploading} className="block text-xs" onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) void uploadSigned(file);
+                event.target.value = "";
+              }} />
+            </label>
+          )}
           {document.fileUrl && (
             <a
               href={document.fileUrl}

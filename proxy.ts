@@ -2,6 +2,10 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function proxy(request: NextRequest) {
+  // Legacy private files must never be served from the public directory.
+  if (request.nextUrl.pathname === "/uploads" || request.nextUrl.pathname.startsWith("/uploads/")) {
+    return new NextResponse(null, { status: 404, headers: { "Cache-Control": "private, no-store" } });
+  }
   let response = NextResponse.next({
     request,
   });
@@ -125,6 +129,7 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/uploads/:path*",
     "/admin/:path*",
     "/api/:path*",
     "/login",
