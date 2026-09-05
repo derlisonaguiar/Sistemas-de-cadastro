@@ -1,11 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { documentEntityLabels, documentStatusLabels, documentTypeLabels, type DocumentEntityKey } from "@/lib/document-labels";
 import { useEffect, useState } from "react";
 
 type Document = {
   id: string;
   title: string;
+  origin: "GENERATED" | "IMPORTED";
+  documentDate: string | null;
+  organizationDocument: boolean;
+  signedFile: string | null;
   type: string;
   status: string;
   fileUrl: string | null;
@@ -102,26 +107,19 @@ function statusLabel(status: string) {
 }
 
 function linkedTo(document: Document) {
-  if (document.member) {
-    return document.member.fullName;
-  }
-
-  if (document.client) {
-    return document.client.name;
-  }
-
-  if (document.project) {
-    return document.project.name;
-  }
-
-  if (document.contract) {
-    return document.contract.title;
-  }
-
-  return "Sem vínculo";
+  return [document.member?.fullName, document.client?.name, document.project?.name, document.contract?.title, document.organizationDocument ? "Organização" : null].filter(Boolean).join(" · ") || "Sem vínculo específico";
 }
 
 export default function DocumentosPage() {
+  const [filters, setFilters] = useState({ origin: "", type: "", status: "", memberId: "", clientId: "", projectId: "", contractId: "", documentDate: "" });
+  function changeFilter(key: keyof typeof filters, value: string) { setFilters((current) => ({ ...current, [key]: value })); }
+  function entityOptions(key: DocumentEntityKey) {
+    const property = key.slice(0, -2) as "member" | "client" | "project" | "contract";
+    return [...new Map(documents.flatMap((document) => {
+      const entity = document[property];
+      return entity ? [[entity.id, { id: entity.id, label: "fullName" in entity ? entity.fullName : "name" in entity ? entity.name : entity.title }] as const] : [];
+    })).values()];
+  }
   const [documents, setDocuments] =
     useState<Document[]>([]);
 
@@ -191,6 +189,14 @@ export default function DocumentosPage() {
 
   const filteredDocuments =
     documents.filter((document) => {
+      if (filters.origin && document.origin !== filters.origin) return false;
+      if (filters.type && document.type !== filters.type) return false;
+      if (filters.status && document.status !== filters.status) return false;
+      if (filters.documentDate && (document.documentDate || document.issueDate)?.slice(0, 10) !== filters.documentDate) return false;
+      if (filters.memberId && document.member?.id !== filters.memberId) return false;
+      if (filters.clientId && document.client?.id !== filters.clientId) return false;
+      if (filters.projectId && document.project?.id !== filters.projectId) return false;
+      if (filters.contractId && document.contract?.id !== filters.contractId) return false;
       const term =
         search.toLowerCase();
 
@@ -234,6 +240,7 @@ export default function DocumentosPage() {
         </div>
 
         <div className="flex flex-wrap gap-2">
+          <Link href="/admin/documentos/importar" className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium">Importar documento</Link>
           <Link
             href="/admin/documentos/modelos"
             className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
@@ -357,14 +364,21 @@ export default function DocumentosPage() {
       <section>
         <div className="mb-3">
           <h2 className="font-semibold text-gray-900">
-            Documentos gerados
+            Documentos
           </h2>
 
           <p className="mt-1 text-sm text-gray-500">
-            Histórico dos documentos emitidos pelo sistema.
+            Histórico dos documentos gerados e importados.
           </p>
         </div>
 
+        <div className="mb-4 grid gap-3 md:grid-cols-3">
+          <label className="text-sm">Origem<select value={filters.origin} onChange={(e) => changeFilter("origin", e.target.value)} className="block w-full rounded-md border p-2"><option value="">Todas</option><option value="GENERATED">Gerado</option><option value="IMPORTED">Importado</option></select></label>
+          <label className="text-sm">Tipo<select value={filters.type} onChange={(e) => changeFilter("type", e.target.value)} className="block w-full rounded-md border p-2"><option value="">Todos</option>{Object.entries(documentTypeLabels).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+          <label className="text-sm">Status<select value={filters.status} onChange={(e) => changeFilter("status", e.target.value)} className="block w-full rounded-md border p-2"><option value="">Todos</option>{Object.entries(documentStatusLabels).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+          {(Object.keys(documentEntityLabels) as DocumentEntityKey[]).map((key) => <label key={key} className="text-sm">{documentEntityLabels[key]}<select value={filters[key]} onChange={(e) => changeFilter(key, e.target.value)} className="block w-full rounded-md border p-2"><option value="">Todos</option>{entityOptions(key).map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}</select></label>)}
+          <label className="text-sm">Data do documento<input type="date" value={filters.documentDate} onChange={(e) => changeFilter("documentDate", e.target.value)} className="block w-full rounded-md border p-2" /></label>
+        </div>
         <div className="mb-4">
           <input
             type="text"
@@ -388,11 +402,11 @@ export default function DocumentosPage() {
             0 ? (
             <div className="p-10 text-center">
               <h3 className="font-medium text-gray-900">
-                Nenhum documento gerado
+                Nenhum documento encontrado
               </h3>
 
               <p className="mt-2 text-sm text-gray-500">
-                Os documentos que você gerar aparecerão aqui.
+                Os documentos gerados e importados aparecerão aqui.
               </p>
 
               {activeTemplates.length >
@@ -444,7 +458,8 @@ export default function DocumentosPage() {
                       >
                         <td className="px-5 py-4">
                           <p className="font-medium text-gray-900">
-                            {document.title}
+                            {document.title}<span className="ml-2 text-xs text-gray-500">{document.origin === "IMPORTED" ? "Importado" : "Gerado"}</span>
+                          <span className="mt-1 block text-xs text-gray-500">{(document.documentDate || document.issueDate)?.slice(0, 10).split("-").reverse().join("/") || "Sem data"}</span>
                           </p>
 
                           {document.generatedDocxUrl && (

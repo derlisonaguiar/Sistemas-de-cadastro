@@ -33,12 +33,15 @@ export default function EditarDocumentoPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [contracts, setContracts] = useState<Contract[]>([]);
 
+  const [imported, setImported] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
   const [form, setForm] = useState({
     title: "",
+    documentDate: "",
+    organizationDocument: false,
     type: "OTHER",
     status: "DRAFT",
     memberId: "",
@@ -83,9 +86,12 @@ export default function EditarDocumentoPage() {
         }
 
         const document = documentData.document;
+        setImported(document.origin === "IMPORTED");
 
         setForm({
           title: document.title || "",
+          documentDate: document.documentDate?.slice(0, 10) || "",
+          organizationDocument: document.organizationDocument || false,
           type: document.type || "OTHER",
           status: document.status || "DRAFT",
           memberId: document.member?.id || "",
@@ -191,6 +197,11 @@ export default function EditarDocumentoPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {imported && <div className="grid gap-4 rounded-lg border bg-white p-5 md:grid-cols-2">
+          <label className="text-sm">Data real do documento<input type="date" required value={form.documentDate} onChange={(e) => updateField("documentDate", e.target.value)} className="mt-1 block w-full rounded-md border p-2" /></label>
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.organizationDocument} onChange={(e) => setForm((current) => ({ ...current, organizationDocument: e.target.checked }))} />Documento institucional da organização</label>
+        </div>}
+
         <section className="rounded-lg border border-gray-200 bg-white">
           <div className="grid gap-4 p-5 md:grid-cols-2">
             <div className="md:col-span-2">

@@ -5,6 +5,13 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 type Document = {
+  origin: string;
+  documentDate: string | null;
+  importedAt: string | null;
+  importedById: string | null;
+  importedFileHash: string | null;
+  organizationDocument: boolean;
+  duplicateReason: string | null;
   id: string;
   title: string;
   type: string;
@@ -231,7 +238,7 @@ export default function DocumentoPage() {
           </div>
 
           <p className="mt-1 text-sm text-gray-600">
-            {typeLabel(document.type)}
+            {typeLabel(document.type)} · {document.origin === "IMPORTED" ? "Importado" : "Gerado"}
           </p>
         </div>
 
@@ -240,7 +247,7 @@ export default function DocumentoPage() {
             <a href={document.generatedPdfUrl || document.generatedDocxUrl || undefined} target="_blank" rel="noopener noreferrer" className="rounded-md border px-4 py-2 text-sm">Abrir original gerado</a>
           )}
           {document.signedFile ? (
-            <a href={document.signedFile} target="_blank" rel="noopener noreferrer" className="rounded-md border px-4 py-2 text-sm">Abrir assinado · enviado em {formatDate(document.signedAt)}</a>
+            <a href={`/api/documents/${document.id}/download?variant=signed`} target="_blank" rel="noopener noreferrer" className="rounded-md border px-4 py-2 text-sm">Abrir assinado · enviado em {formatDate(document.signedAt)}</a>
           ) : (
             <label className="rounded-md border px-4 py-2 text-sm">
               {uploading ? "Enviando..." : "Enviar assinado (PDF, até 10 MB)"}
@@ -253,7 +260,7 @@ export default function DocumentoPage() {
           )}
           {document.fileUrl && (
             <a
-              href={document.fileUrl}
+              href={`/api/documents/${document.id}/download`}
               target="_blank"
               rel="noopener noreferrer"
               className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
@@ -286,6 +293,11 @@ export default function DocumentoPage() {
         </div>
       )}
 
+      {document.origin === "IMPORTED" && <div className="mb-5 rounded-md border bg-white p-4 text-sm text-gray-600">
+        <p>Importado em {formatDate(document.importedAt)} · Administrador: {document.importedById}</p>
+        <p className="break-all">SHA-256: {document.importedFileHash}</p>
+        {document.duplicateReason && <p>Justificativa da cópia: {document.duplicateReason}</p>}
+      </div>}
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-lg border border-gray-200 bg-white">
           <div className="border-b border-gray-200 px-5 py-4">
@@ -317,11 +329,11 @@ export default function DocumentoPage() {
 
             <div>
               <p className="text-xs font-medium uppercase text-gray-500">
-                Emissão
+                Data do documento
               </p>
 
               <p className="mt-1 text-sm text-gray-900">
-                {formatDate(document.issueDate)}
+                {(document.documentDate || document.issueDate)?.slice(0, 10).split("-").reverse().join("/") || "—"}
               </p>
             </div>
 
@@ -340,7 +352,7 @@ export default function DocumentoPage() {
         <section className="rounded-lg border border-gray-200 bg-white">
           <div className="border-b border-gray-200 px-5 py-4">
             <h2 className="font-semibold text-gray-900">
-              Vínculos
+              Vínculos {document.organizationDocument && "· Organização"}
             </h2>
           </div>
 

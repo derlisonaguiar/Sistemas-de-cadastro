@@ -104,6 +104,8 @@ export const documentSchema = z.object({
   status: z.enum(["DRAFT", "PENDING", "SIGNED", "ISSUED", "ARCHIVED", "CANCELED"]).default("DRAFT"),
   memberId: optionalIdSchema, clientId: optionalIdSchema, projectId: optionalIdSchema, contractId: optionalIdSchema,
   description: optionalText(3000), issueDate: optionalDate, signatureDate: optionalDate,
+  documentDate: z.union([z.iso.date(), z.literal("")]).optional(),
+  organizationDocument: z.boolean().optional(),
 }).strict();
 
 export const documentTemplateSchema = z.object({

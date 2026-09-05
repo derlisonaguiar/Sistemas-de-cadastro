@@ -5,6 +5,10 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
 type DocumentItem = {
+  origin: string;
+  fileUrl: string | null;
+  signedFile: string | null;
+  documentDate: string | null;
   id: string;
   title: string;
   type: string;
@@ -684,6 +688,7 @@ export default function MembroPage() {
               </p>
             </div>
 
+            <Link href={`/admin/documentos/importar?memberId=${member.id}`} className="rounded-md border px-4 py-2 text-sm">Importar documento</Link>
             <Link
               href={`/admin/documentos/gerar?memberId=${member.id}`}
               className="rounded-md px-4 py-2 text-sm font-medium text-white"
@@ -708,7 +713,7 @@ export default function MembroPage() {
                 </p>
 
                 <p className="mt-1 text-sm text-gray-500">
-                  Gere o primeiro documento para este membro.
+                  Gere ou importe um documento para este membro.
                 </p>
               </div>
             ) : (
@@ -745,9 +750,7 @@ export default function MembroPage() {
                         >
                           <td className="px-4 py-3">
                             <p className="font-medium text-gray-900">
-                              {
-                                document.title
-                              }
+                              {document.title} <span className="text-xs text-gray-500">{document.origin === "IMPORTED" ? "Importado" : "Gerado"}</span>
                             </p>
 
                             {document.template && (
@@ -769,9 +772,7 @@ export default function MembroPage() {
                           </td>
 
                           <td className="px-4 py-3 text-gray-600">
-                            {formatDateTime(
-                              document.createdAt
-                            )}
+                            {document.documentDate ? document.documentDate.slice(0, 10).split("-").reverse().join("/") : formatDateTime(document.createdAt)}
                           </td>
 
                           <td className="px-4 py-3">
@@ -784,6 +785,8 @@ export default function MembroPage() {
 
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-3">
+                              <Link href={`/admin/documentos/${document.id}`} className="text-purple-700 underline">Ver</Link>
+                              {document.origin === "IMPORTED" && <a href={`/api/documents/${document.id}/download?variant=${document.signedFile ? "signed" : "original"}`} className="text-purple-700 underline">{document.signedFile ? "Assinado" : "Arquivo importado"}</a>}
                               {document.generatedDocxUrl ? (
                                 <a
                                   href={

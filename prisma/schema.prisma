@@ -145,6 +145,11 @@ enum DocumentStatus {
   CANCELED
 }
 
+enum DocumentOrigin {
+  GENERATED
+  IMPORTED
+}
+
 enum TemplateFieldType {
   TEXT
   NUMBER
@@ -483,6 +488,19 @@ model Document {
 
   status DocumentStatus @default(DRAFT)
 
+  origin DocumentOrigin @default(GENERATED)
+  documentDate DateTime? @db.Date
+  organizationDocument Boolean @default(false)
+  importedById String?
+  importedAt DateTime?
+  importedFileHash String?
+  importedFileName String?
+  importedMimeType String?
+  importedFileSize Int?
+  importLinks Json?
+  duplicateOfId String?
+  duplicateReason String?
+
   description String?
 
   content String?
@@ -512,6 +530,9 @@ model Document {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([organizationId, importedFileHash])
+  @@index([organizationId, documentDate])
 
   @@index([organizationId])
   @@index([templateId])

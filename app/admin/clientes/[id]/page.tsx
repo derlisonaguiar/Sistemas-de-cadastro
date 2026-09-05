@@ -1,4 +1,5 @@
 "use client";
+import EntityDocuments from "@/components/documents/EntityDocuments";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -32,39 +33,38 @@ export default function ClientePage() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
 
-  async function loadData() {
-    try {
-      const [clientResponse, organizationResponse] =
-        await Promise.all([
-          fetch(`/api/clients/${id}`),
-          fetch("/api/organization"),
-        ]);
-
-      const clientData = await clientResponse.json();
-      const organizationData =
-        await organizationResponse.json();
-
-      if (clientData.ok) {
-        setClient(clientData.client);
-      } else {
-        setMessage(clientData.message || "Cliente não encontrado.");
-      }
-
-      if (organizationData.ok) {
-        setOrganization(organizationData.organization);
-      }
-    } catch (error) {
-      console.error("Erro ao carregar cliente:", error);
-      setMessage("Erro ao carregar cliente.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
   useEffect(() => {
-    if (id) {
-      loadData();
+    async function loadData() {
+      try {
+        const [clientResponse, organizationResponse] =
+          await Promise.all([
+            fetch(`/api/clients/${id}`),
+            fetch("/api/organization"),
+          ]);
+
+        const clientData = await clientResponse.json();
+        const organizationData =
+          await organizationResponse.json();
+
+        if (clientData.ok) {
+          setClient(clientData.client);
+        } else {
+          setMessage(clientData.message || "Cliente não encontrado.");
+        }
+
+        if (organizationData.ok) {
+          setOrganization(organizationData.organization);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar cliente:", error);
+        setMessage("Erro ao carregar cliente.");
+      } finally {
+        setLoading(false);
+      }
     }
+
+
+    if (id) void loadData();
   }, [id]);
 
   async function handleToggleActive() {
@@ -297,6 +297,7 @@ export default function ClientePage() {
           </div>
         </section>
       </div>
+      <EntityDocuments entityKey="clientId" entityId={client.id} />
     </div>
   );
 }

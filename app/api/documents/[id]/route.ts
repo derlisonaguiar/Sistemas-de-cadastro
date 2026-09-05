@@ -4,6 +4,7 @@ import { getAdminApiContext } from "@/lib/auth";
 import { parseJsonRequest } from "@/lib/api";
 import { documentSchema, routeIdSchema } from "@/lib/validation";
 import { createSignedStorageUrl } from "@/lib/storage";
+import { DocumentImportError, validateDocumentLinks } from "@/lib/document-import";
 
 type RouteContext = {
   params: Promise<{
@@ -124,6 +125,13 @@ export async function PUT(
     if (parsed.response) return parsed.response;
     const data = parsed.data!;
 
+    if (existingDocument.origin === "IMPORTED") {
+      await validateDocumentLinks(prisma, organization.id, data);
+      if (data.documentDate === "" || (data.status === "SIGNED" && !existingDocument.signedFile)) {
+        return NextResponse.json({ ok: false, message: "Informe a data real e envie o arquivo assinado antes de marcar como Assinado." }, { status: 400 });
+      }
+    }
+
     if (!data.title || !data.title.trim()) {
       return NextResponse.json(
         {
@@ -172,6 +180,8 @@ export async function PUT(
       },
       data: {
         title: data.title.trim(),
+        ...(data.documentDate !== undefined ? { documentDate: data.documentDate ? new Date(data.documentDate + "T00:00:00Z") : null } : {}),
+        ...(data.organizationDocument !== undefined ? { organizationDocument: data.organizationDocument } : {}),
         type: data.type,
         status: data.status || "DRAFT",
 
@@ -204,6 +214,8 @@ export async function PUT(
     });
   } catch (error) {
     console.error("Erro ao atualizar documento:", error);
+
+    if (error instanceof DocumentImportError) return NextResponse.json({ ok: false, message: error.message }, { status: error.status });
 
     return NextResponse.json(
       {

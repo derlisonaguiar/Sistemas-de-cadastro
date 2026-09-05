@@ -1,4 +1,5 @@
 "use client";
+import EntityDocuments from "@/components/documents/EntityDocuments";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -273,6 +274,7 @@ export default function ProjetoPage() {
           </div>
         </section>
       </div>
+      <EntityDocuments entityKey="projectId" entityId={project.id} />
     </div>
   );
 }

@@ -1,4 +1,5 @@
 "use client";
+import EntityDocuments from "@/components/documents/EntityDocuments";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -321,6 +322,7 @@ export default function ContratoPage() {
           </div>
         </section>
       </div>
+      <EntityDocuments entityKey="contractId" entityId={contract.id} />
     </div>
   );
 }
