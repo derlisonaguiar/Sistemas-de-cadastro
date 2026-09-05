@@ -157,8 +157,7 @@ export default function ProjetoPage() {
     );
   }
 
-  const primaryColor =
-    organization?.primaryColor || "#6D28D9";
+  const primaryColor = `var(--admin-primary, ${organization?.primaryColor})`;
 
   return (
     <div className="max-w-6xl">

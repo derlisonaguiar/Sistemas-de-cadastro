@@ -67,7 +67,7 @@ export default function MemberStatusDialog<T extends { id: string; fullName: str
         {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
         <div className="flex justify-end gap-3">
           <button type="button" disabled={saving} onClick={onClose} className="rounded-md border px-3 py-2 text-sm">Cancelar</button>
-          <button type="submit" disabled={saving || status === member.status} className="rounded-md bg-purple-700 px-3 py-2 text-sm text-white disabled:opacity-60">
+          <button type="submit" disabled={saving || status === member.status} className="rounded-md bg-[var(--admin-primary)] px-3 py-2 text-sm text-[var(--admin-on-primary)] disabled:opacity-60">
             {saving ? "Confirmando..." : "Confirmar alteração"}
           </button>
         </div>

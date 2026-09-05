@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { applyAdminTheme } from "@/lib/admin-theme";
 
 type Organization = {
   id: string;
@@ -335,6 +336,7 @@ export default function ConfiguracoesPage() {
       setMessage(
         "Alterações salvas com sucesso."
       );
+      applyAdminTheme(data.organization);
     } catch (error) {
       console.error(
         "Erro ao salvar:",

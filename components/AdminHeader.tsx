@@ -15,17 +15,17 @@ export default function AdminHeader() {
     router.refresh();
   }
   return (
-    <header className="flex h-16 items-center justify-between border-b border-gray-200 bg-white px-6">
+    <header className="admin-header">
       <div>
-        <p className="text-sm font-medium text-gray-900">
+        <p className="text-sm font-semibold tracking-tight text-gray-900">
           Painel Administrativo
         </p>
-        <p className="text-xs text-gray-500">
+        <p className="mt-1 text-xs text-gray-500">
           Gestão da organização
         </p>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="admin-header-user flex items-center gap-3">
         <div className="text-right">
           <p className="text-sm font-medium text-gray-900">
             Administrador
@@ -35,7 +35,7 @@ export default function AdminHeader() {
           </p>
         </div>
 
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-purple-100 text-sm font-semibold text-purple-700">
+        <div className="admin-avatar flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold">
           AD
         </div>
 
@@ -43,7 +43,7 @@ export default function AdminHeader() {
           type="button"
           onClick={handleSignOut}
           disabled={signingOut}
-          className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+          className="admin-signout rounded-lg border px-3 py-1.5 text-xs font-medium disabled:opacity-50"
         >
           {signingOut ? "Saindo..." : "Sair"}
         </button>

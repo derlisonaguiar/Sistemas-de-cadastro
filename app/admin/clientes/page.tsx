@@ -66,7 +66,7 @@ export default function ClientesPage() {
     );
   });
 
-  const primaryColor = organization?.primaryColor || "#6D28D9";
+  const primaryColor = `var(--admin-primary, ${organization?.primaryColor})`;
 
   return (
     <div className="max-w-6xl">
@@ -174,7 +174,7 @@ export default function ClientesPage() {
                     <td className="px-5 py-4">
                       <Link
                         href={`/admin/clientes/${client.id}`}
-                        style={{ color: primaryColor }}
+                        style={{ color: "var(--admin-ink)" }}
                         className="font-medium"
                       >
                         Ver

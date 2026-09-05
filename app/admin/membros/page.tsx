@@ -87,9 +87,7 @@ export default function MembrosPage() {
     loadData();
   }, []);
 
-  const primaryColor =
-    organization?.primaryColor ??
-    "#5B21B6";
+  const primaryColor = `var(--admin-primary, ${organization?.primaryColor})`;
 
   const filteredMembers =
     members.filter((member) => {
@@ -290,7 +288,7 @@ export default function MembrosPage() {
                           className="text-sm font-medium"
                           style={{
                             color:
-                              primaryColor,
+                              "var(--admin-ink)",
                           }}
                         >
                           Ver detalhes

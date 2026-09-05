@@ -412,7 +412,7 @@ export default function EditarContratoPage() {
           <button
             type="submit"
             disabled={saving}
-            className="rounded-md bg-purple-700 px-4 py-2 text-sm font-medium text-white hover:bg-purple-800 disabled:opacity-60"
+            className="rounded-md bg-[var(--admin-primary)] px-4 py-2 text-sm font-medium text-[var(--admin-on-primary)] hover:bg-[var(--admin-primary)] disabled:opacity-60"
           >
             {saving ? "Salvando..." : "Salvar alterações"}
           </button>

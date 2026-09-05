@@ -300,9 +300,7 @@ export default function MembroPage() {
     );
   }
 
-  const primaryColor =
-    organization?.primaryColor ||
-    "#6D28D9";
+  const primaryColor = `var(--admin-primary, ${organization?.primaryColor})`;
 
   const tabClass = (
     tab:
@@ -378,9 +376,9 @@ export default function MembroPage() {
               activeTab === tab
                 ? {
                     borderColor:
-                      primaryColor,
+                      "var(--admin-ink)",
                     color:
-                      primaryColor,
+                      "var(--admin-ink)",
                   }
                 : undefined
             }
@@ -786,8 +784,8 @@ export default function MembroPage() {
 
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-3">
-                              <Link href={`/admin/documentos/${document.id}`} className="text-purple-700 underline">Ver</Link>
-                              {document.origin === "IMPORTED" && <a href={`/api/documents/${document.id}/download?variant=${document.signedFile ? "signed" : "original"}`} className="text-purple-700 underline">{document.signedFile ? "Assinado" : "Arquivo importado"}</a>}
+                              <Link href={`/admin/documentos/${document.id}`} className="text-[var(--admin-ink)] underline">Ver</Link>
+                              {document.origin === "IMPORTED" && <a href={`/api/documents/${document.id}/download?variant=${document.signedFile ? "signed" : "original"}`} className="text-[var(--admin-ink)] underline">{document.signedFile ? "Assinado" : "Arquivo importado"}</a>}
                               {document.generatedDocxUrl ? (
                                 <a
                                   href={
@@ -798,7 +796,7 @@ export default function MembroPage() {
                                   className="text-sm font-medium"
                                   style={{
                                     color:
-                                      primaryColor,
+                                      "var(--admin-ink)",
                                   }}
                                 >
                                   DOCX
@@ -819,7 +817,7 @@ export default function MembroPage() {
                                   className="text-sm font-medium"
                                   style={{
                                     color:
-                                      primaryColor,
+                                      "var(--admin-ink)",
                                   }}
                                 >
                                   PDF

@@ -49,7 +49,7 @@ export default function UsersPage() {
     finally { setBusy(false); }
   }
   const lastAdmin = users.filter(user => user.active && user.role === "ADMIN").length === 1;
-  const inputClass = "mt-1 h-8 w-full rounded-md border border-gray-200 px-2 text-xs focus:border-purple-400 focus:outline-none focus:ring-1 focus:ring-purple-100";
+  const inputClass = "mt-1 h-8 w-full rounded-md border border-gray-200 px-2 text-xs focus:border-[var(--admin-accent-border)] focus:outline-none focus:ring-1 focus:ring-[var(--admin-hover)]";
   return <div className="max-w-4xl space-y-4 text-xs text-gray-700">
     <div><h1 className="text-lg font-semibold text-gray-900">Usuários</h1><p className="mt-1 text-xs text-gray-500">ADMIN tem acesso completo. USER tem acesso somente de consulta.</p></div>
     {message && <p role="status" className="rounded-md border border-gray-200 bg-white px-3 py-2">{message}</p>}
@@ -60,7 +60,7 @@ export default function UsersPage() {
         <label>E-mail<input className={inputClass} name="email" type="email" required maxLength={254} autoComplete="off" /></label>
         <label>Senha inicial<input className={inputClass} name="password" type="password" required minLength={12} maxLength={128} autoComplete="new-password" /><span className="mt-1 block text-[11px] text-gray-400">Mínimo de 12 caracteres.</span></label>
         <label>Permissão<select className={inputClass} name="role" defaultValue="USER"><option>USER</option><option>ADMIN</option></select></label>
-        <button className="w-fit rounded-md border border-purple-200 bg-purple-50 px-3 py-1.5 text-xs text-purple-700 hover:bg-purple-100 disabled:opacity-50 sm:col-span-2 lg:col-span-4" type="submit">{busy ? "Aguarde..." : "Cadastrar usuário"}</button>
+        <button className="w-fit rounded-md border border-[var(--admin-accent-border)] bg-[var(--admin-soft)] px-3 py-1.5 text-xs text-[var(--admin-ink)] hover:bg-[var(--admin-hover)] disabled:opacity-50 sm:col-span-2 lg:col-span-4" type="submit">{busy ? "Aguarde..." : "Cadastrar usuário"}</button>
       </fieldset>
     </form>
     <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
@@ -71,9 +71,9 @@ export default function UsersPage() {
           <td className="px-3 py-2">{user.name || "Nome não informado"}{user.id === currentId ? " (você)" : ""}</td><td className="px-3 py-2">{user.email || "—"}</td>
           <td className="px-3 py-2">{user.role}</td>
           <td className="px-3 py-2">{user.active ? "Ativo" : "Inativo"}</td>
-          <td className="px-3 py-2"><div className="flex flex-wrap gap-x-3 gap-y-1"><button disabled={busy} className="text-purple-700 underline-offset-4 hover:underline disabled:opacity-40" onClick={() => { setEditError(""); setEditing(user); }}>Editar</button><button disabled={busy || protectedAdmin} className="text-purple-700 disabled:opacity-40"
+          <td className="px-3 py-2"><div className="flex flex-wrap gap-x-3 gap-y-1"><button disabled={busy} className="text-[var(--admin-ink)] underline-offset-4 hover:underline disabled:opacity-40" onClick={() => { setEditError(""); setEditing(user); }}>Editar</button><button disabled={busy || protectedAdmin} className="text-[var(--admin-ink)] disabled:opacity-40"
             onClick={() => mutate(`/api/users/${user.id}`, "PATCH", { active: !user.active })}>{user.active ? "Desativar" : "Ativar"}</button>
-            <button disabled={busy} className="text-purple-700 disabled:opacity-40" onClick={() => mutate(`/api/users/${user.id}/reset-password`, "POST")}>Recuperar senha</button></div>
+            <button disabled={busy} className="text-[var(--admin-ink)] disabled:opacity-40" onClick={() => mutate(`/api/users/${user.id}/reset-password`, "POST")}>Recuperar senha</button></div>
             {protectedAdmin && <span className="mt-1 block text-[11px] text-gray-400">Último ADMIN ativo</span>}</td>
         </tr>;
       })}</tbody></table>
@@ -104,7 +104,7 @@ function EditUserDialog({ user, protectedAdmin, busy, error, onClose, onSave }: 
       role: protectedAdmin ? user.role : values.get("role") as User["role"],
       active: protectedAdmin ? user.active : values.get("active") === "true" });
   }
-  const inputClass = "mt-1 h-8 w-full rounded-md border border-gray-200 px-2 text-xs focus:border-purple-400 focus:outline-none focus:ring-1 focus:ring-purple-100 disabled:bg-gray-50 disabled:text-gray-500";
+  const inputClass = "mt-1 h-8 w-full rounded-md border border-gray-200 px-2 text-xs focus:border-[var(--admin-accent-border)] focus:outline-none focus:ring-1 focus:ring-[var(--admin-hover)] disabled:bg-gray-50 disabled:text-gray-500";
   return <dialog ref={dialog} aria-labelledby="edit-user-title" aria-describedby="edit-user-description"
     onCancel={event => { event.preventDefault(); if (!busy) onClose(); }}
     className="fixed inset-0 m-auto w-[calc(100%-2rem)] max-w-sm rounded-lg border border-gray-200 bg-white p-4 text-xs text-gray-700 shadow-lg backdrop:bg-black/20">
@@ -126,7 +126,7 @@ function EditUserDialog({ user, protectedAdmin, busy, error, onClose, onSave }: 
       {error && <p role="alert" className="rounded bg-red-50 px-2 py-1.5 text-red-700">{error}</p>}
       <div className="flex justify-end gap-2 border-t border-gray-100 pt-3">
         <button type="button" disabled={busy} onClick={onClose} className="rounded-md border border-gray-200 px-3 py-1.5 hover:bg-gray-50 disabled:opacity-50">Cancelar</button>
-        <button type="submit" disabled={busy} className="rounded-md border border-purple-200 bg-purple-50 px-3 py-1.5 text-purple-700 hover:bg-purple-100 disabled:opacity-50">{busy ? "Salvando..." : "Salvar alterações"}</button>
+        <button type="submit" disabled={busy} className="rounded-md border border-[var(--admin-accent-border)] bg-[var(--admin-soft)] px-3 py-1.5 text-[var(--admin-ink)] hover:bg-[var(--admin-hover)] disabled:opacity-50">{busy ? "Salvando..." : "Salvar alterações"}</button>
       </div>
     </form>
   </dialog>;

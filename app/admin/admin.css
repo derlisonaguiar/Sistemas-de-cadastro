@@ -1,0 +1,59 @@
+.admin-shell {
+  --admin-soft: color-mix(in srgb, var(--admin-primary) 7%, var(--background));
+  --admin-hover: color-mix(in srgb, var(--admin-primary) 12%, var(--background));
+  --admin-accent-border: color-mix(in srgb, var(--admin-primary) 35%, var(--background));
+  --admin-border: color-mix(in srgb, var(--foreground) 12%, var(--background));
+  --admin-ink: color-mix(in srgb, var(--admin-primary) 30%, var(--foreground));
+  background: color-mix(in srgb, var(--admin-secondary) 4%, var(--background));
+  color: var(--foreground);
+}
+.admin-layout { display: flex; min-height: 100vh; }
+.admin-sidebar { position: sticky; top: 0; height: 100vh; width: 244px; flex-shrink: 0; overflow-y: auto; background: var(--background); border-right: 1px solid var(--admin-border); }
+.admin-brand { min-height: 96px; padding: 24px 20px; border-bottom: 1px solid var(--admin-border); }
+.admin-brand-mark { background: var(--admin-primary); color: var(--admin-on-primary); }
+.admin-navigation { padding: 24px 14px; }
+.admin-nav-link { display: block; padding: 11px 14px; border-radius: 8px; font-size: 14px; font-weight: 500; color: var(--foreground); transition: background-color 150ms; }
+.admin-nav-link:hover { background: var(--admin-soft); }
+.admin-nav-link[aria-current="page"] { background: var(--admin-primary); color: var(--admin-on-primary); }
+.admin-nav-settings { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--admin-border); }
+.admin-nav-label { margin: 0 14px 10px; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+.admin-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 80px; padding: 16px 32px; background: var(--background); border-bottom: 1px solid var(--admin-border); }
+.admin-avatar, .admin-symbol { background: var(--admin-soft); color: var(--admin-ink); }
+.admin-signout { border-color: var(--admin-border); }
+.admin-signout:hover { background: var(--admin-soft); }
+.admin-content { padding: 32px; min-width: 0; }
+.admin-dashboard { max-width: 1440px; margin-inline: auto; }
+.admin-shell :where(.border, .border-b, .border-t) { border-color: var(--admin-border); }
+.admin-card-link, .admin-dashboard-panel { box-shadow: 0 2px 6px color-mix(in srgb, var(--foreground) 4%, transparent); }
+.admin-card-link { transition: border-color 150ms, box-shadow 150ms; }
+.admin-card-link:hover { border-color: var(--admin-accent-border); box-shadow: 0 4px 14px color-mix(in srgb, var(--admin-primary) 9%, transparent); }
+.admin-card-arrow { color: var(--admin-ink); }
+.admin-shell :where(input:not([type="checkbox"]):not([type="radio"]):not([type="color"]), select, textarea) { border-radius: 8px; border-color: var(--admin-border); }
+.admin-shell :where(input, select, textarea) { accent-color: var(--admin-primary); }
+.admin-shell :where(a, button, input, select, textarea):focus-visible { outline: 2px solid var(--admin-ink); outline-offset: 3px; }
+.admin-shell :where(button, a).text-white[style*="background-color"] { color: var(--admin-on-primary); }
+.admin-shell :where(table) { border-collapse: collapse; }
+.admin-shell :where(th) { font-weight: 600; }
+.admin-shell :where(thead) { background: var(--admin-soft); }
+.admin-shell :where(tbody tr:hover) { background: var(--admin-soft); }
+.admin-shell :where(td, th) { vertical-align: middle; }
+.admin-shell :where([role="dialog"], .fixed.inset-0 > .bg-white) { border-radius: 16px; box-shadow: 0 20px 60px color-mix(in srgb, var(--foreground) 18%, transparent); }
+@media (max-width: 900px) {
+  .admin-sidebar { width: 200px; }
+  .admin-content { padding: 24px 20px; }
+  .admin-header { padding-inline: 20px; }
+}
+@media (max-width: 640px) {
+  .admin-layout { flex-direction: column; }
+  .admin-sidebar { position: static; width: 100%; height: auto; border-right: 0; border-bottom: 1px solid var(--admin-border); }
+  .admin-brand { min-height: auto; padding: 16px; }
+  .admin-navigation { padding: 12px; }
+  .admin-menu, .admin-settings-links { display: flex; flex-wrap: wrap; gap: 4px; }
+  .admin-nav-settings { width: 100%; margin-top: 8px; padding-top: 12px; }
+  .admin-nav-link { padding: 8px 10px; font-size: 13px; }
+  .admin-header { flex-wrap: wrap; padding: 16px; }
+  .admin-content { padding: 24px 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .admin-shell *, .admin-shell *::before, .admin-shell *::after { transition: none; }
+}

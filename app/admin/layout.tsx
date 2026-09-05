@@ -4,6 +4,8 @@ import AdminSidebar from "@/components/AdminSidebar";
 import AdminHeader from "@/components/AdminHeader";
 import { redirect } from "next/navigation";
 import { AuthError, requireAuthenticatedProfile } from "@/lib/auth";
+import { adminThemeStyle } from "@/lib/admin-theme";
+import "./admin.css";
 
 type AdminLayoutProps = {
   children: ReactNode;
@@ -11,9 +13,11 @@ type AdminLayoutProps = {
 
 export default async function AdminLayout({ children }: AdminLayoutProps) {
   let isAdmin = false;
+  let theme;
   try {
     const auth = await requireAuthenticatedProfile();
     isAdmin = auth.profile.role === "ADMIN";
+    theme = adminThemeStyle(auth.organization);
   } catch (error) {
     if (error instanceof AuthError) {
       if (error.code === "UNAUTHORIZED") redirect("/login");
@@ -25,14 +29,14 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
 
   return (
     <AccessProvider isAdmin={isAdmin}>
-    <div className="min-h-screen bg-gray-50">
-      <div className="flex min-h-screen">
+    <div className="admin-shell min-h-screen" style={theme}>
+      <div className="admin-layout">
         <AdminSidebar />
 
         <div className="flex min-w-0 flex-1 flex-col">
           <AdminHeader />
 
-          <main className="flex-1 p-6">
+          <main className="admin-content flex-1">
             {children}
           </main>
         </div>

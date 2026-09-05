@@ -29,7 +29,7 @@ export default function EntityDocuments({ entityKey, entityId }: { entityKey: Do
     </div>
     {loading ? <p className="text-sm text-gray-500">Carregando documentos...</p> : error ? <p role="alert" className="text-sm text-red-700">{error}</p> : !documents.length ? <p className="text-sm text-gray-500">Nenhum documento encontrado.</p> :
       <ul className="divide-y divide-gray-200">{documents.map((document) => <li key={document.id} className="flex flex-wrap justify-between gap-3 py-3 text-sm">
-        <Link href={`/admin/documentos/${document.id}`} className="text-purple-700 underline">{document.title}</Link>
+        <Link href={`/admin/documentos/${document.id}`} className="text-[var(--admin-ink)] underline">{document.title}</Link>
         <span>{document.origin === "IMPORTED" ? "Importado" : "Gerado"} · {documentStatusLabels[document.status]} · {(document.documentDate || document.issueDate)?.slice(0, 10).split("-").reverse().join("/") || "Sem data"}</span>
       </li>)}</ul>}
   </section>;

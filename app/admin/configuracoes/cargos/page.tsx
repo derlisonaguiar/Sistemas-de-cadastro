@@ -351,7 +351,7 @@ export default function CargosPage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="flex-1 rounded-md bg-purple-700 px-4 py-2 text-sm font-medium text-white hover:bg-purple-800 disabled:opacity-60"
+                className="flex-1 rounded-md bg-[var(--admin-primary)] px-4 py-2 text-sm font-medium text-[var(--admin-on-primary)] hover:bg-[var(--admin-primary)] disabled:opacity-60"
               >
                 {saving
                   ? "Salvando..."
@@ -395,7 +395,7 @@ export default function CargosPage() {
                     </p>
 
                     <div className="mt-2 flex flex-wrap gap-2">
-                      <span className="inline-block rounded-full bg-purple-50 px-2 py-1 text-xs font-medium text-purple-700">
+                      <span className="inline-block rounded-full bg-[var(--admin-soft)] px-2 py-1 text-xs font-medium text-[var(--admin-ink)]">
                         {roleLabels[position.role] ?? "Outro"}{position.directorateId ? ` · ${directorates.find((item) => item.id === position.directorateId)?.name || "Diretoria"}` : ""}
                       </span>
 

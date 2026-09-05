@@ -211,7 +211,7 @@ export default function NovoDocumentoPage() {
               Modelo DOCX ou PDF *
             </label>
 
-            <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 px-6 py-10 text-center transition hover:border-purple-400 hover:bg-purple-50">
+            <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 px-6 py-10 text-center transition hover:border-[var(--admin-accent-border)] hover:bg-[var(--admin-soft)]">
               <span className="text-sm font-medium text-gray-800">
                 Clique para selecionar
                 o arquivo
@@ -483,7 +483,7 @@ export default function NovoDocumentoPage() {
               !file ||
               !name.trim()
             }
-            className="rounded-md bg-purple-700 px-5 py-2 text-sm font-medium text-white hover:bg-purple-800 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-md bg-[var(--admin-primary)] px-5 py-2 text-sm font-medium text-[var(--admin-on-primary)] hover:bg-[var(--admin-primary)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {uploading
               ? "Validando..."

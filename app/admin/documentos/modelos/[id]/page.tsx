@@ -522,7 +522,7 @@ export default function RevisarModeloDocumentoPage() {
           <div className="mb-2">
             <Link
               href="/admin/documentos/modelos"
-              className="text-sm text-purple-700 hover:underline"
+              className="text-sm text-[var(--admin-ink)] hover:underline"
             >
               ← Voltar para modelos
             </Link>
@@ -701,7 +701,7 @@ export default function RevisarModeloDocumentoPage() {
                 </p>
               </div>
 
-              <span className="rounded-full bg-purple-50 px-3 py-1 text-xs font-medium text-purple-700">
+              <span className="rounded-full bg-[var(--admin-soft)] px-3 py-1 text-xs font-medium text-[var(--admin-ink)]">
                 {template.fields.length} campos
               </span>
             </div>
@@ -963,7 +963,7 @@ export default function RevisarModeloDocumentoPage() {
                               field.id
                             )
                           }
-                          className="rounded-md bg-purple-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+                          className="rounded-md bg-[var(--admin-primary)] px-4 py-2 text-sm font-medium text-[var(--admin-on-primary)] disabled:opacity-60"
                         >
                           {savingFieldId ===
                           field.id

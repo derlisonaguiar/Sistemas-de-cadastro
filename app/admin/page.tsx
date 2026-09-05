@@ -187,7 +187,7 @@ export default async function AdminPage() {
     inactiveTemplates;
 
   return (
-    <div className="space-y-7">
+    <div className="admin-dashboard space-y-8">
       {/* Cabeçalho */}
       <div>
         <h1 className="text-2xl font-semibold text-gray-900">
@@ -205,7 +205,7 @@ export default async function AdminPage() {
           <Link
             key={indicator.label}
             href={indicator.href}
-            className="group rounded-xl border border-gray-200 bg-white p-5 transition hover:border-purple-200 hover:shadow-sm"
+            className="admin-metric admin-card-link group rounded-xl border bg-white p-5"
           >
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -213,12 +213,12 @@ export default async function AdminPage() {
                   {indicator.label}
                 </p>
 
-                <p className="mt-2 text-3xl font-semibold text-gray-900">
+                <p className="mt-3 text-4xl font-semibold tracking-tight tabular-nums text-gray-900">
                   {indicator.value}
                 </p>
               </div>
 
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-purple-50 text-sm font-semibold text-purple-700">
+              <div className="admin-symbol flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-semibold">
                 {indicator.symbol}
               </div>
             </div>
@@ -247,14 +247,14 @@ export default async function AdminPage() {
             <Link
               key={action.title}
               href={action.href}
-              className="group flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-4 transition hover:border-purple-200 hover:bg-purple-50/40 hover:shadow-sm"
+              className="admin-card-link group flex items-center gap-3 rounded-xl border bg-white p-4"
             >
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-purple-50 text-sm font-semibold text-purple-700 transition group-hover:bg-purple-100">
+              <div className="admin-symbol flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-semibold">
                 {action.symbol}
               </div>
 
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-gray-900 group-hover:text-purple-700">
+                <p className="text-sm font-medium text-gray-900">
                   {action.title}
                 </p>
 
@@ -263,7 +263,7 @@ export default async function AdminPage() {
                 </p>
               </div>
 
-              <span className="ml-auto text-gray-300 transition group-hover:translate-x-0.5 group-hover:text-purple-600">
+              <span className="admin-card-arrow ml-auto text-sm">
                 →
               </span>
             </Link>
@@ -274,7 +274,7 @@ export default async function AdminPage() {
       {/* Estrutura + Pendências */}
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
         {/* Estrutura */}
-        <section className="rounded-xl border border-gray-200 bg-white">
+        <section className="admin-dashboard-panel overflow-hidden rounded-xl border bg-white">
           <div className="border-b border-gray-100 px-5 py-4">
             <h2 className="text-base font-semibold text-gray-900">
               Estrutura da organização
@@ -286,7 +286,7 @@ export default async function AdminPage() {
           </div>
 
           <div className="divide-y divide-gray-100 px-5">
-            <div className="flex items-center justify-between py-4">
+            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-4">
               <span className="text-sm text-gray-500">
                 Presidente
               </span>
@@ -294,7 +294,7 @@ export default async function AdminPage() {
               {president ? (
                 <Link
                   href={`/admin/membros/${president.id}`}
-                  className="text-sm font-medium text-gray-900 hover:text-purple-700"
+                  className="text-sm font-medium text-gray-900 hover:text-[var(--admin-ink)]"
                 >
                   {president.fullName}
                 </Link>
@@ -305,7 +305,7 @@ export default async function AdminPage() {
               )}
             </div>
 
-            <div className="flex items-center justify-between py-4">
+            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-4">
               <span className="text-sm text-gray-500">
                 Vice-Presidente
               </span>
@@ -313,7 +313,7 @@ export default async function AdminPage() {
               {vicePresident ? (
                 <Link
                   href={`/admin/membros/${vicePresident.id}`}
-                  className="text-sm font-medium text-gray-900 hover:text-purple-700"
+                  className="text-sm font-medium text-gray-900 hover:text-[var(--admin-ink)]"
                 >
                   {vicePresident.fullName}
                 </Link>
@@ -324,7 +324,7 @@ export default async function AdminPage() {
               )}
             </div>
 
-            <div className="flex items-center justify-between py-4">
+            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-4">
               <span className="text-sm text-gray-500">
                 Diretorias cadastradas
               </span>
@@ -334,7 +334,7 @@ export default async function AdminPage() {
               </span>
             </div>
 
-            <div className="flex items-center justify-between py-4">
+            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-4">
               <span className="text-sm text-gray-500">
                 Cargos cadastrados
               </span>
@@ -344,7 +344,7 @@ export default async function AdminPage() {
               </span>
             </div>
 
-            <div className="flex items-center justify-between py-4">
+            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-4">
               <span className="text-sm text-gray-500">
                 Total de membros ativos
               </span>
@@ -357,7 +357,7 @@ export default async function AdminPage() {
         </section>
 
         {/* Pendências */}
-        <section className="rounded-xl border border-gray-200 bg-white">
+        <section className="admin-dashboard-panel overflow-hidden rounded-xl border bg-white">
           <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
             <div>
               <h2 className="text-base font-semibold text-gray-900">

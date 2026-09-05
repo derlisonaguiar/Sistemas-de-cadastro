@@ -224,9 +224,7 @@ export default function DocumentosPage() {
         template.active
     );
 
-  const primaryColor =
-    organization?.primaryColor ||
-    "#6D28D9";
+  const primaryColor = `var(--admin-primary, ${organization?.primaryColor})`;
 
   return (
     <div className="max-w-6xl">
@@ -279,7 +277,7 @@ export default function DocumentosPage() {
             href="/admin/documentos/novo"
             style={{
               color:
-                primaryColor,
+                "var(--admin-ink)",
             }}
             className="text-sm font-medium"
           >
@@ -349,7 +347,7 @@ export default function DocumentosPage() {
                       href={`/admin/documentos/gerar?templateId=${template.id}`}
                       style={{
                         color:
-                          primaryColor,
+                          "var(--admin-ink)",
                       }}
                       className="text-sm font-medium"
                     >
@@ -497,7 +495,7 @@ export default function DocumentosPage() {
                               href={`/admin/documentos/${document.id}`}
                               style={{
                                 color:
-                                  primaryColor,
+                                  "var(--admin-ink)",
                               }}
                               className="font-medium"
                             >

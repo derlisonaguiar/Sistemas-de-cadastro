@@ -729,13 +729,13 @@ function GerarDocumentoContent() {
 
       {memberIdFromUrl &&
         selectedMember && (
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-md border border-purple-200 bg-purple-50 px-4 py-3">
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-md border border-[var(--admin-accent-border)] bg-[var(--admin-soft)] px-4 py-3">
             <div>
-              <p className="text-xs font-medium uppercase text-purple-600">
+              <p className="text-xs font-medium uppercase text-[var(--admin-ink)]">
                 Documento para
               </p>
 
-              <p className="mt-1 text-sm font-medium text-purple-900">
+              <p className="mt-1 text-sm font-medium text-[var(--admin-ink)]">
                 {
                   selectedMember.fullName
                 }
@@ -744,7 +744,7 @@ function GerarDocumentoContent() {
 
             <Link
               href={`/admin/membros/${selectedMember.id}`}
-              className="text-sm font-medium text-purple-700 hover:underline"
+              className="text-sm font-medium text-[var(--admin-ink)] hover:underline"
             >
               Voltar ao perfil
             </Link>
@@ -978,7 +978,7 @@ function GerarDocumentoContent() {
 
                         <Link
                           href={`/admin/membros/${selectedMember.id}/editar`}
-                          className="inline-flex shrink-0 items-center justify-center rounded-md border border-purple-200 bg-purple-50 px-3 py-2 text-sm font-medium text-purple-700 transition hover:bg-purple-100"
+                          className="inline-flex shrink-0 items-center justify-center rounded-md border border-[var(--admin-accent-border)] bg-[var(--admin-soft)] px-3 py-2 text-sm font-medium text-[var(--admin-ink)] transition hover:bg-[var(--admin-hover)]"
                         >
                           Editar membro
                         </Link>
@@ -1027,7 +1027,7 @@ function GerarDocumentoContent() {
 
                         <Link
                           href={`/admin/membros/${selectedRepresentative.id}/editar`}
-                          className="inline-flex shrink-0 items-center justify-center rounded-md border border-purple-200 bg-purple-50 px-3 py-2 text-sm font-medium text-purple-700 transition hover:bg-purple-100"
+                          className="inline-flex shrink-0 items-center justify-center rounded-md border border-[var(--admin-accent-border)] bg-[var(--admin-soft)] px-3 py-2 text-sm font-medium text-[var(--admin-ink)] transition hover:bg-[var(--admin-hover)]"
                         >
                           Editar representante
                         </Link>
@@ -1068,7 +1068,7 @@ function GerarDocumentoContent() {
 
                       <Link
                         href="/admin/configuracoes"
-                        className="inline-flex shrink-0 items-center justify-center rounded-md border border-purple-200 bg-purple-50 px-3 py-2 text-sm font-medium text-purple-700 transition hover:bg-purple-100"
+                        className="inline-flex shrink-0 items-center justify-center rounded-md border border-[var(--admin-accent-border)] bg-[var(--admin-soft)] px-3 py-2 text-sm font-medium text-[var(--admin-ink)] transition hover:bg-[var(--admin-hover)]"
                       >
                         Editar organização
                       </Link>
@@ -1097,7 +1097,7 @@ function GerarDocumentoContent() {
                   </p>
                 </div>
 
-                <span className="rounded-full bg-purple-50 px-3 py-1 text-xs font-medium text-purple-700">
+                <span className="rounded-full bg-[var(--admin-soft)] px-3 py-1 text-xs font-medium text-[var(--admin-ink)]">
                   {
                     manualFields.length
                   }{" "}
@@ -1183,7 +1183,7 @@ function GerarDocumentoContent() {
             onClick={
               handleGenerateDocument
             }
-            className="rounded-md bg-purple-700 px-5 py-2.5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-md bg-[var(--admin-primary)] px-5 py-2.5 text-sm font-medium text-[var(--admin-on-primary)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {generating
               ? "Gerando..."

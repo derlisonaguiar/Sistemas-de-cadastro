@@ -102,7 +102,7 @@ export default function DocumentImportForm({ initialLinks }: { initialLinks: Rec
       {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
       <div className="flex justify-end gap-3">
         <Link href="/admin/documentos" className="rounded-md border px-4 py-2 text-sm">Cancelar</Link>
-        <button disabled={saving || loading || !loaded || (!!duplicate && !confirmDuplicate)} type="submit" className="rounded-md bg-purple-700 px-4 py-2 text-sm text-white disabled:opacity-60">{saving ? "Importando..." : confirmDuplicate ? "Confirmar importação da cópia" : "Importar documento"}</button>
+        <button disabled={saving || loading || !loaded || (!!duplicate && !confirmDuplicate)} type="submit" className="rounded-md bg-[var(--admin-primary)] px-4 py-2 text-sm text-[var(--admin-on-primary)] disabled:opacity-60">{saving ? "Importando..." : confirmDuplicate ? "Confirmar importação da cópia" : "Importar documento"}</button>
       </div>
     </form>
   </div>;
