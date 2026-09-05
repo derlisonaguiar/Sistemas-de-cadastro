@@ -56,7 +56,7 @@ export const memberSchema = z.object({
   address: optionalText(250), addressNumber: optionalText(30), neighborhood: optionalText(120),
   cep: optionalText(12), city: optionalText(120), state: optionalText(120),
   entryDate: optionalDate, exitDate: optionalDate,
-  status: z.enum(["ACTIVE", "INACTIVE", "LEAVE", "ALUMNI"]).default("ACTIVE"),
+  status: z.enum(["ACTIVE", "INACTIVE", "LEAVE", "ALUMNI", "POS_JR"]).default("ACTIVE"),
   directorateId: optionalIdSchema, positionId: optionalIdSchema,
 }).strict().refine((data) => !data.entryDate || !data.exitDate || data.exitDate >= data.entryDate, {
   message: "A data de saída não pode ser anterior à entrada.", path: ["exitDate"],
@@ -67,6 +67,7 @@ export const directorateSchema = z.object({
 }).strict();
 
 export const positionSchema = z.object({
+  directorateId: z.union([idSchema, z.literal(""), z.null()]).transform((value) => value || null).optional(),
   name: requiredText(120), description: optionalText(1000),
   role: z.enum(["PRESIDENT", "VICE_PRESIDENT", "DIRECTOR", "MANAGER", "MEMBER", "OTHER"]).default("OTHER"),
   active: z.boolean().optional(),

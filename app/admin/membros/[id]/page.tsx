@@ -46,6 +46,13 @@ type Member = {
   exitDate: string | null;
 
   status: string;
+  membershipHistory: Array<{
+    directorateName: string | null;
+    positionName: string | null;
+    positionRole: string | null;
+    exitDate: string;
+    recordedAt: string;
+  }>;
 
   directorate: {
     id: string;
@@ -70,6 +77,8 @@ function statusLabel(status: string) {
       return "Inativo";
     case "LEAVE":
       return "Afastado";
+    case "POS_JR":
+      return "Pós-Jr";
     case "ALUMNI":
       return "Egresso";
     default:
@@ -378,7 +387,20 @@ export default function MembroPage() {
 
       {activeTab === "dados" && (
         <div className="space-y-6">
-          <section className="rounded-lg border border-gray-200 bg-white">
+          {member.membershipHistory?.length > 0 && (
+          <section className="rounded-lg border border-gray-200 bg-white p-5 lg:col-span-2">
+            <h2 className="font-semibold text-gray-900">Histórico de vínculos encerrados</h2>
+            <ul className="mt-3 space-y-2 text-sm text-gray-700">
+              {member.membershipHistory.map((entry, index) => (
+                <li key={`${entry.recordedAt}-${index}`}>
+                  {entry.positionName || "Sem cargo"} · {entry.directorateName || "Sem diretoria"} · Saída: {formatDate(entry.exitDate)}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        <section className="rounded-lg border border-gray-200 bg-white">
             <div className="border-b border-gray-200 px-5 py-4">
               <h2 className="font-semibold text-gray-900">
                 Dados pessoais

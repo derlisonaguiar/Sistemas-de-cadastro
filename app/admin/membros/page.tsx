@@ -23,7 +23,7 @@ type Member = {
   registration: string | null;
   entryDate: string | null;
   exitDate: string | null;
-  status: "ACTIVE" | "INACTIVE" | "LEAVE" | "ALUMNI";
+  status: "ACTIVE" | "INACTIVE" | "LEAVE" | "ALUMNI" | "POS_JR";
 
   directorate: Directorate | null;
   position: Position | null;
@@ -38,6 +38,7 @@ const statusLabels = {
   INACTIVE: "Inativo",
   LEAVE: "Afastado",
   ALUMNI: "Egresso",
+  POS_JR: "Pós-Jr",
 };
 
 export default function MembrosPage() {
@@ -47,6 +48,7 @@ export default function MembrosPage() {
 
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
   useEffect(() => {
     async function loadData() {
@@ -95,6 +97,7 @@ export default function MembrosPage() {
 
   const filteredMembers =
     members.filter((member) => {
+      if (statusFilter && member.status !== statusFilter) return false;
       const term =
         search
           .trim()
@@ -167,6 +170,11 @@ export default function MembrosPage() {
       <div className="rounded-lg border border-gray-200 bg-white">
         <div className="border-b border-gray-200 p-4">
           <div className="max-w-md">
+            <label htmlFor="member-status-filter" className="block text-sm font-medium text-gray-700">Status</label>
+            <select id="member-status-filter" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="mb-3 w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+              <option value="">Todos os status</option>
+              {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            </select>
             <input
               type="search"
               placeholder="Buscar por nome, diretoria, cargo, curso ou e-mail..."

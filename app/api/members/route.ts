@@ -139,6 +139,10 @@ export async function POST(request: Request) {
       }
     }
 
+    if (status !== "POS_JR" && selectedPosition?.directorateId && selectedPosition.directorateId !== data.directorateId) {
+      return NextResponse.json({ ok: false, message: "O cargo não pertence à diretoria selecionada." }, { status: 400 });
+    }
+
     /*
      * Regras de ocupação de cargos de liderança.
      * As regras abaixo valem somente para membros ATIVOS.

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 
 type Directorate = {
@@ -14,6 +15,7 @@ type Position = {
   name: string;
   active: boolean;
   role?: string;
+  directorateId: string | null;
 };
 
 type Member = {
@@ -132,6 +134,10 @@ export default function EditarMembroPage() {
           positionId: member.positionId || "",
         });
 
+        if (!directoratesResponse.ok || !positionsResponse.ok || !directoratesData.ok || !positionsData.ok) {
+          throw new Error("Erro ao carregar diretorias e cargos.");
+        }
+
         if (directoratesData.ok) {
           setDirectorates(directoratesData.directorates);
         }
@@ -154,6 +160,10 @@ export default function EditarMembroPage() {
       loadData();
     }
   }, [id]);
+
+  const availablePositions = positions.filter((position) =>
+    !position.directorateId || position.directorateId === form.directorateId
+  );
 
   const selectedPosition = useMemo(() => {
     return positions.find(
@@ -215,6 +225,9 @@ export default function EditarMembroPage() {
     setForm((current) => ({
       ...current,
       [field]: value,
+      ...(field === "directorateId" && positions.find((position) => position.id === current.positionId)?.directorateId
+        ? { positionId: "" } : {}),
+      ...(field === "status" && value === "POS_JR" ? { directorateId: "", positionId: "" } : {}),
     }));
   }
 
@@ -567,11 +580,12 @@ export default function EditarMembroPage() {
 
           <div className="grid gap-4 p-5 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label htmlFor="directorateId" className="mb-1 block text-sm font-medium text-gray-700">
                 Diretoria
               </label>
 
               <select
+                id="directorateId" disabled={form.status === "POS_JR"}
                 value={form.directorateId}
                 onChange={(e) =>
                   updateField("directorateId", e.target.value)
@@ -593,11 +607,12 @@ export default function EditarMembroPage() {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label htmlFor="positionId" className="mb-1 block text-sm font-medium text-gray-700">
                 Cargo
               </label>
 
               <select
+                id="positionId" disabled={form.status === "POS_JR"}
                 value={form.positionId}
                 onChange={(e) =>
                   updateField("positionId", e.target.value)
@@ -606,7 +621,7 @@ export default function EditarMembroPage() {
               >
                 <option value="">Sem cargo</option>
 
-                {positions.map((position) => (
+                {availablePositions.map((position) => (
                   <option
                     key={position.id}
                     value={position.id}
@@ -617,6 +632,16 @@ export default function EditarMembroPage() {
                 ))}
               </select>
             </div>
+
+            {directorates.length === 0 && (
+              <p className="text-sm text-gray-700">Nenhuma diretoria cadastrada. <Link className="text-purple-700 underline" href="/admin/configuracoes/diretorias" target="_blank" rel="noopener noreferrer">Cadastrar diretoria</Link>. Recarregue este formulário após cadastrar.</p>
+            )}
+            {availablePositions.length === 0 && (
+              <p className="text-sm text-gray-700">{positions.length === 0 ? "Nenhum cargo cadastrado." : "Nenhum cargo disponível para esta diretoria."} <Link className="text-purple-700 underline" href="/admin/configuracoes/cargos" target="_blank" rel="noopener noreferrer">Cadastrar cargo</Link>. Recarregue este formulário após cadastrar.</p>
+            )}
+            {form.status === "POS_JR" && (
+              <p className="md:col-span-2 text-sm text-gray-700">Pós-Jr não ocupa cargo ou diretoria. Ao salvar, o vínculo anterior ficará no histórico do membro e seus documentos serão preservados.</p>
+            )}
 
             {leadershipNotice && (
               <div className="md:col-span-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-3">
@@ -675,6 +700,7 @@ export default function EditarMembroPage() {
                 <option value="ACTIVE">Ativo</option>
                 <option value="INACTIVE">Inativo</option>
                 <option value="LEAVE">Afastado</option>
+                <option value="POS_JR">Pós-Jr</option>
                 <option value="ALUMNI">Egresso</option>
               </select>
             </div>

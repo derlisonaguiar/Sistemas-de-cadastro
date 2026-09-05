@@ -97,6 +97,7 @@ enum MemberStatus {
   INACTIVE
   LEAVE
   ALUMNI
+  POS_JR
 }
 
 enum PositionRole {
@@ -216,6 +217,7 @@ model Member {
   exitDate  DateTime?
 
   status MemberStatus @default(ACTIVE)
+  membershipHistory Json @default("[]")
 
   directorateId String?
   positionId    String?
@@ -246,6 +248,7 @@ model Directorate {
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   members      Member[]
+  positions    Position[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -257,6 +260,7 @@ model Directorate {
 model Position {
   id             String @id @default(cuid())
   organizationId String
+  directorateId  String?
 
   name        String
   description String?
@@ -266,6 +270,7 @@ model Position {
   active Boolean @default(true)
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  directorate  Directorate? @relation(fields: [directorateId], references: [id], onDelete: SetNull)
   members      Member[]
 
   createdAt DateTime @default(now())
@@ -274,6 +279,7 @@ model Position {
   @@unique([organizationId, name])
   @@index([organizationId])
   @@index([role])
+  @@index([directorateId])
 }
 
 model Client {

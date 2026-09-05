@@ -194,6 +194,10 @@ export async function PUT(
       }
     }
 
+    if (status !== "POS_JR" && selectedPosition?.directorateId && selectedPosition.directorateId !== data.directorateId) {
+      return NextResponse.json({ ok: false, message: "O cargo não pertence à diretoria selecionada." }, { status: 400 });
+    }
+
     /*
      * Regras de exclusividade.
      *

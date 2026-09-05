@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { getAdminApiContext } from "@/lib/auth";
-import { parseJsonRequest } from "@/lib/api";
+import { databaseErrorResponse, parseJsonRequest } from "@/lib/api";
 import { positionSchema } from "@/lib/validation";
 
 export async function GET() {
@@ -57,6 +57,12 @@ export async function POST(request: Request) {
       );
     }
 
+    if (data.directorateId && !await prisma.directorate.findFirst({
+      where: { id: data.directorateId, organizationId: organization.id }, select: { id: true },
+    })) {
+      return NextResponse.json({ ok: false, message: "Diretoria inválida para esta organização." }, { status: 400 });
+    }
+
     const role = data.role;
 
     const position = await prisma.position.create({
@@ -65,6 +71,7 @@ export async function POST(request: Request) {
         name: data.name.trim(),
         description: data.description?.trim() || null,
         role,
+        directorateId: data.directorateId || null,
       },
     });
 
@@ -78,13 +85,6 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     console.error("Erro ao cadastrar cargo:", error);
-
-    return NextResponse.json(
-      {
-        ok: false,
-        message: "Erro ao cadastrar cargo.",
-      },
-      { status: 500 }
-    );
+    return databaseErrorResponse(error);
   }
 }

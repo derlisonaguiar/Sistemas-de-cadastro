@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 type Directorate = {
@@ -14,6 +15,7 @@ type Position = {
   name: string;
   active: boolean;
   role?: string;
+  directorateId: string | null;
 };
 
 export default function NovoMembroPage() {
@@ -67,6 +69,10 @@ export default function NovoMembroPage() {
         const positionsData =
           await positionsResponse.json();
 
+        if (!directoratesResponse.ok || !positionsResponse.ok || !directoratesData.ok || !positionsData.ok) {
+          throw new Error("Erro ao carregar diretorias e cargos.");
+        }
+
         if (directoratesData.ok) {
           setDirectorates(
             directoratesData.directorates
@@ -94,6 +100,10 @@ export default function NovoMembroPage() {
 
     loadData();
   }, []);
+
+  const availablePositions = positions.filter((position) =>
+    !position.directorateId || position.directorateId === form.directorateId
+  );
 
   const selectedPosition =
     useMemo(() => {
@@ -194,6 +204,9 @@ export default function NovoMembroPage() {
     setForm((current) => ({
       ...current,
       [field]: value,
+      ...(field === "directorateId" && positions.find((position) => position.id === current.positionId)?.directorateId
+        ? { positionId: "" } : {}),
+      ...(field === "status" && value === "POS_JR" ? { directorateId: "", positionId: "" } : {}),
     }));
   }
 
@@ -654,11 +667,12 @@ export default function NovoMembroPage() {
 
           <div className="grid gap-4 p-5 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label htmlFor="directorateId" className="mb-1 block text-sm font-medium text-gray-700">
                 Diretoria
               </label>
 
               <select
+                id="directorateId" disabled={form.status === "POS_JR"}
                 value={
                   form.directorateId
                 }
@@ -697,11 +711,12 @@ export default function NovoMembroPage() {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label htmlFor="positionId" className="mb-1 block text-sm font-medium text-gray-700">
                 Cargo
               </label>
 
               <select
+                id="positionId" disabled={form.status === "POS_JR"}
                 value={
                   form.positionId
                 }
@@ -717,7 +732,7 @@ export default function NovoMembroPage() {
                   Sem cargo
                 </option>
 
-                {positions.map(
+                {availablePositions.map(
                   (position) => (
                     <option
                       key={
@@ -738,6 +753,16 @@ export default function NovoMembroPage() {
                 )}
               </select>
             </div>
+
+            {directorates.length === 0 && (
+              <p className="text-sm text-gray-700">Nenhuma diretoria cadastrada. <Link className="text-purple-700 underline" href="/admin/configuracoes/diretorias" target="_blank" rel="noopener noreferrer">Cadastrar diretoria</Link>. Recarregue este formulário após cadastrar.</p>
+            )}
+            {availablePositions.length === 0 && (
+              <p className="text-sm text-gray-700">{positions.length === 0 ? "Nenhum cargo cadastrado." : "Nenhum cargo disponível para esta diretoria."} <Link className="text-purple-700 underline" href="/admin/configuracoes/cargos" target="_blank" rel="noopener noreferrer">Cadastrar cargo</Link>. Recarregue este formulário após cadastrar.</p>
+            )}
+            {form.status === "POS_JR" && (
+              <p className="md:col-span-2 text-sm text-gray-700">Pós-Jr não ocupa cargo ou diretoria. Ao salvar, o vínculo anterior ficará no histórico do membro e seus documentos serão preservados.</p>
+            )}
 
             {leadershipNotice && (
               <div className="md:col-span-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-3">
@@ -824,6 +849,7 @@ export default function NovoMembroPage() {
                   Afastado
                 </option>
 
+                <option value="POS_JR">Pós-Jr</option>
                 <option value="ALUMNI">
                   Egresso
                 </option>

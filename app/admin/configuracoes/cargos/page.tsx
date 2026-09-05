@@ -15,6 +15,7 @@ type Position = {
   name: string;
   description: string | null;
   role: PositionRole;
+  directorateId: string | null;
   active: boolean;
 };
 
@@ -27,9 +28,20 @@ const roleLabels: Record<PositionRole, string> = {
   OTHER: "Outro",
 };
 
+async function fetchPositionOptions() {
+  const [response, directoratesResponse] = await Promise.all([fetch("/api/positions"), fetch("/api/directorates")]);
+  const [data, directoratesData] = await Promise.all([response.json(), directoratesResponse.json()]);
+  if (!response.ok || !data.ok || !directoratesResponse.ok || !directoratesData.ok) {
+    throw new Error("Erro ao carregar cargos e diretorias.");
+  }
+  return { positions: data.positions as Position[], directorates: directoratesData.directorates as Array<{ id: string; name: string }> };
+}
+
 export default function CargosPage() {
   const [positions, setPositions] = useState<Position[]>([]);
 
+  const [directorates, setDirectorates] = useState<Array<{ id: string; name: string }>>([]);
+  const [directorateId, setDirectorateId] = useState("");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [role, setRole] = useState<PositionRole>("OTHER");
@@ -43,27 +55,36 @@ export default function CargosPage() {
 
   async function loadPositions() {
     try {
-      const response = await fetch("/api/positions");
-      const data = await response.json();
-
-      if (data.ok) {
-        setPositions(data.positions);
-      }
+      const data = await fetchPositionOptions();
+      setDirectorates(data.directorates);
+      setPositions(data.positions);
     } catch (error) {
       console.error("Erro ao carregar cargos:", error);
+      setMessage("Erro ao carregar cargos e diretorias.");
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    loadPositions();
+    let cancelled = false;
+    fetchPositionOptions().then((data) => {
+      if (cancelled) return;
+      setDirectorates(data.directorates);
+      setPositions(data.positions);
+    }).catch(() => {
+      if (!cancelled) setMessage("Erro ao carregar cargos e diretorias.");
+    }).finally(() => {
+      if (!cancelled) setLoading(false);
+    });
+    return () => { cancelled = true; };
   }, []);
 
   function resetForm() {
     setName("");
     setDescription("");
     setRole("OTHER");
+    setDirectorateId("");
     setEditingId(null);
     setMessage("");
   }
@@ -90,6 +111,7 @@ export default function CargosPage() {
           name,
           description,
           role,
+          directorateId,
         }),
       });
 
@@ -109,6 +131,7 @@ export default function CargosPage() {
       setName("");
       setDescription("");
       setRole("OTHER");
+      setDirectorateId("");
       setEditingId(null);
 
       await loadPositions();
@@ -125,6 +148,7 @@ export default function CargosPage() {
     setName(position.name);
     setDescription(position.description ?? "");
     setRole(position.role ?? "OTHER");
+    setDirectorateId(position.directorateId || "");
     setMessage("");
   }
 
@@ -143,6 +167,7 @@ export default function CargosPage() {
             name: position.name,
             description: position.description,
             role: position.role,
+            directorateId: position.directorateId,
             active: !position.active,
           }),
         }
@@ -297,6 +322,15 @@ export default function CargosPage() {
               />
             </div>
 
+            <div>
+              <label htmlFor="position-directorate" className="mb-1 block text-sm font-medium text-gray-700">Diretoria do cargo</label>
+              <select id="position-directorate" value={directorateId} onChange={(event) => setDirectorateId(event.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+                <option value="">Sem vínculo específico</option>
+                {directorates.map((directorate) => <option key={directorate.id} value={directorate.id}>{directorate.name}</option>)}
+              </select>
+              <p className="mt-1 text-xs text-gray-500">Quando vinculado, o cargo só pode ser atribuído a membros desta diretoria.</p>
+            </div>
+
             {message && (
               <p className="text-sm text-gray-700">
                 {message}
@@ -362,7 +396,7 @@ export default function CargosPage() {
 
                     <div className="mt-2 flex flex-wrap gap-2">
                       <span className="inline-block rounded-full bg-purple-50 px-2 py-1 text-xs font-medium text-purple-700">
-                        {roleLabels[position.role] ?? "Outro"}
+                        {roleLabels[position.role] ?? "Outro"}{position.directorateId ? ` · ${directorates.find((item) => item.id === position.directorateId)?.name || "Diretoria"}` : ""}
                       </span>
 
                       <span

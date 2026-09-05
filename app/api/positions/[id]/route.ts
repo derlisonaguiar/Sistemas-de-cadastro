@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { getAdminApiContext } from "@/lib/auth";
-import { parseJsonRequest } from "@/lib/api";
+import { databaseErrorResponse, parseJsonRequest } from "@/lib/api";
 import { positionSchema, routeIdSchema } from "@/lib/validation";
 
 type RouteContext = {
@@ -65,6 +65,12 @@ export async function PUT(
       );
     }
 
+    if (data.directorateId && !await prisma.directorate.findFirst({
+      where: { id: data.directorateId, organizationId: organization.id }, select: { id: true },
+    })) {
+      return NextResponse.json({ ok: false, message: "Diretoria inválida para esta organização." }, { status: 400 });
+    }
+
     const role = data.role;
 
     const position = await prisma.position.update({
@@ -75,6 +81,7 @@ export async function PUT(
         name: data.name.trim(),
         description: data.description?.trim() || null,
         role,
+        directorateId: data.directorateId === undefined ? existingPosition.directorateId : data.directorateId,
         active:
           typeof data.active === "boolean"
             ? data.active
@@ -89,14 +96,7 @@ export async function PUT(
     });
   } catch (error) {
     console.error("Erro ao atualizar cargo:", error);
-
-    return NextResponse.json(
-      {
-        ok: false,
-        message: "Erro ao atualizar cargo.",
-      },
-      { status: 500 }
-    );
+    return databaseErrorResponse(error);
   }
 }
 
