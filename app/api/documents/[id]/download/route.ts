@@ -1,5 +1,5 @@
+import { getReadApiContext } from "@/lib/auth";
 import { NextResponse } from "next/server";
-import { getAdminApiContext } from "@/lib/auth";
 import { internalErrorResponse } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { createSignedStorageUrl } from "@/lib/storage";
@@ -7,7 +7,7 @@ import { routeIdSchema } from "@/lib/validation";
 
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    const auth = await getAdminApiContext();
+    const auth = await getReadApiContext();
     if (auth.response) return auth.response;
     const params = routeIdSchema.safeParse(await context.params);
     if (!params.success) return NextResponse.json({ ok: false }, { status: 400 });

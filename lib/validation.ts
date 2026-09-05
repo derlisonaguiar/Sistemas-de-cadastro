@@ -127,7 +127,7 @@ export const documentGenerationSchema = z.object({
 }).strict();
 
 export const invitationSchema = z.object({
-  email: z.string().trim().toLowerCase().email().max(254), role: z.enum(["ADMIN", "MEMBER"]).default("MEMBER"),
+  email: z.string().trim().toLowerCase().email().max(254), role: z.enum(["ADMIN", "USER"]).default("USER"),
 }).strict();
 export const linkInvitationSchema = z.object({ token: z.string().trim().min(32).max(256) }).strict();
 export const loginSchema = z.object({

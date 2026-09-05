@@ -1,4 +1,5 @@
 "use client";
+import { AdminOnly } from "@/components/AccessProvider";
 import EntityDocuments from "@/components/documents/EntityDocuments";
 
 import Link from "next/link";
@@ -190,21 +191,21 @@ export default function ContratoPage() {
         </div>
 
         <div className="flex gap-2">
-          <Link
+          <AdminOnly><Link
             href={`/admin/contratos/${contract.id}/editar`}
             style={{ backgroundColor: primaryColor }}
             className="rounded-md px-4 py-2 text-sm font-medium text-white"
           >
             Editar contrato
-          </Link>
+          </Link></AdminOnly>
 
-          <button
+          <AdminOnly><button
             type="button"
             onClick={handleDelete}
             className="rounded-md border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
           >
             Excluir
-          </button>
+          </button></AdminOnly>
         </div>
       </div>
 

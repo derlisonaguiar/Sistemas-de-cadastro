@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { requireAdminProfile } from "@/lib/auth";
+import { requireAuthenticatedProfile } from "@/lib/auth";
 
 export default async function AdminPage() {
-  const { organization } = await requireAdminProfile();
+  const { organization, profile } = await requireAuthenticatedProfile();
 
   const [
     activeMembers,
@@ -243,7 +243,7 @@ export default async function AdminPage() {
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {quickActions.map((action) => (
+          {quickActions.filter(action => profile.role === "ADMIN" || action.href === "/admin/contratos").map((action) => (
             <Link
               key={action.title}
               href={action.href}

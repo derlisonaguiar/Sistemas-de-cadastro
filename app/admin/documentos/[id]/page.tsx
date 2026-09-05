@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminOnly } from "@/components/AccessProvider";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -249,14 +250,14 @@ export default function DocumentoPage() {
           {document.signedFile ? (
             <a href={`/api/documents/${document.id}/download?variant=signed`} target="_blank" rel="noopener noreferrer" className="rounded-md border px-4 py-2 text-sm">Abrir assinado · enviado em {formatDate(document.signedAt)}</a>
           ) : (
-            <label className="rounded-md border px-4 py-2 text-sm">
+            <AdminOnly><label className="rounded-md border px-4 py-2 text-sm">
               {uploading ? "Enviando..." : "Enviar assinado (PDF, até 10 MB)"}
               <input type="file" accept="application/pdf,.pdf" disabled={uploading} className="block text-xs" onChange={(event) => {
                 const file = event.target.files?.[0];
                 if (file) void uploadSigned(file);
                 event.target.value = "";
               }} />
-            </label>
+            </label></AdminOnly>
           )}
           {document.fileUrl && (
             <a
@@ -269,21 +270,21 @@ export default function DocumentoPage() {
             </a>
           )}
 
-          <Link
+          <AdminOnly><Link
             href={`/admin/documentos/${document.id}/editar`}
             style={{ backgroundColor: primaryColor }}
             className="rounded-md px-4 py-2 text-sm font-medium text-white"
           >
             Editar documento
-          </Link>
+          </Link></AdminOnly>
 
-          <button
+          <AdminOnly><button
             type="button"
             onClick={handleDelete}
             className="rounded-md border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
           >
             Excluir
-          </button>
+          </button></AdminOnly>
         </div>
       </div>
 

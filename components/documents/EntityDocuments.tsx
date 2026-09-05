@@ -1,4 +1,5 @@
 "use client";
+import { AdminOnly } from "@/components/AccessProvider";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { documentStatusLabels, type DocumentEntityKey } from "@/lib/document-labels";
@@ -24,7 +25,7 @@ export default function EntityDocuments({ entityKey, entityId }: { entityKey: Do
   return <section className="mt-6 rounded-lg border border-gray-200 bg-white p-5">
     <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
       <h2 className="font-semibold text-gray-900">Documentos</h2>
-      <Link href={`/admin/documentos/importar?${new URLSearchParams({ [entityKey]: entityId })}`} className="rounded-md border px-4 py-2 text-sm">Importar documento</Link>
+      <AdminOnly><Link href={`/admin/documentos/importar?${new URLSearchParams({ [entityKey]: entityId })}`} className="rounded-md border px-4 py-2 text-sm">Importar documento</Link></AdminOnly>
     </div>
     {loading ? <p className="text-sm text-gray-500">Carregando documentos...</p> : error ? <p role="alert" className="text-sm text-red-700">{error}</p> : !documents.length ? <p className="text-sm text-gray-500">Nenhum documento encontrado.</p> :
       <ul className="divide-y divide-gray-200">{documents.map((document) => <li key={document.id} className="flex flex-wrap justify-between gap-3 py-3 text-sm">

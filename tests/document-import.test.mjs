@@ -118,7 +118,7 @@ test('download uses temporary signed URL and blocks IDOR/missing original', asyn
   for (const variant of ['original', 'signed', 'foreign', 'no-original']) {
     const calls = [];
     const { GET } = loadSource('app/api/documents/[id]/download/route.ts', {
-      '@/lib/auth': { getAdminApiContext: async () => ({ auth: { profile: { organizationId: 'org' } } }) },
+      '@/lib/auth': { getReadApiContext: async () => ({ auth: { profile: { organizationId: 'org' } } }) },
       '@/lib/validation': { routeIdSchema: { safeParse: (data) => ({ success: true, data }) } },
       '@/lib/prisma': { prisma: { document: { findFirst: async ({ where }) => { assert.equal(where.organizationId, 'org'); return variant === 'foreign' ? null : { fileUrl: variant === 'no-original' ? null : 'storage://private/original', signedFile: 'storage://private/signed' }; } } } },
       '@/lib/storage': { createSignedStorageUrl: async (...args) => { calls.push(args); return 'https://storage.example/signed?token=temporary'; } },
@@ -154,7 +154,7 @@ test('import endpoint enforces ADMIN, organization from profile, metadata valida
 
 test('document listing includes imported and generated files with signed URLs', async () => {
   const { GET } = loadSource('app/api/documents/route.ts', {
-    '@/lib/auth': { getAdminApiContext: async () => ({ auth: { organization: { id: 'org' }, profile: { organizationId: 'org' } } }) },
+    '@/lib/auth': { getReadApiContext: async () => ({ auth: { organization: { id: 'org' }, profile: { organizationId: 'org' } } }) },
     '@/lib/prisma': { prisma: { document: { findMany: async ({ where }) => {
       assert.deepEqual(where, { organizationId: 'org', clientId: 'client' });
       return [{ id: 'imported', origin: 'IMPORTED', fileUrl: 'storage://private/imported', signedFile: null }, { id: 'generated', origin: 'GENERATED', generatedDocxUrl: 'storage://private/generated' }];

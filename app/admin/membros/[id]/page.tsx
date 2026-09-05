@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminOnly } from "@/components/AccessProvider";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
@@ -340,7 +341,7 @@ export default function MembroPage() {
           </p>
         </div>
 
-        <Link
+        <AdminOnly><Link
           href={`/admin/membros/${member.id}/editar`}
           style={{
             backgroundColor:
@@ -349,7 +350,7 @@ export default function MembroPage() {
           className="rounded-md px-4 py-2 text-sm font-medium text-white"
         >
           Editar membro
-        </Link>
+        </Link></AdminOnly>
       </div>
 
       <div className="mb-6 flex gap-6 overflow-x-auto border-b border-gray-200 text-sm">
@@ -688,8 +689,8 @@ export default function MembroPage() {
               </p>
             </div>
 
-            <Link href={`/admin/documentos/importar?memberId=${member.id}`} className="rounded-md border px-4 py-2 text-sm">Importar documento</Link>
-            <Link
+            <AdminOnly><Link href={`/admin/documentos/importar?memberId=${member.id}`} className="rounded-md border px-4 py-2 text-sm">Importar documento</Link></AdminOnly>
+            <AdminOnly><Link
               href={`/admin/documentos/gerar?memberId=${member.id}`}
               className="rounded-md px-4 py-2 text-sm font-medium text-white"
               style={{
@@ -698,7 +699,7 @@ export default function MembroPage() {
               }}
             >
               + Gerar documento
-            </Link>
+            </Link></AdminOnly>
           </div>
 
           <section className="overflow-hidden rounded-lg border border-gray-200 bg-white">

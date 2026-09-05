@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 type Organization = {
   id: string;
@@ -376,6 +377,12 @@ export default function ConfiguracoesPage() {
           os dados institucionais e as
           informações usadas nos documentos.
         </p>
+        <Link
+          href="/admin/configuracoes/usuarios"
+          className="mt-3 inline-block text-sm text-gray-500 underline underline-offset-4 hover:text-gray-900"
+        >
+          Gerenciar usuários
+        </Link>
       </div>
 
       <div className="space-y-6">

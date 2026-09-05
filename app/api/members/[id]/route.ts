@@ -1,3 +1,4 @@
+import { getReadApiContext } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
 import { updateMember } from "@/lib/member-update";
@@ -52,7 +53,7 @@ export async function GET(
     if (!params.success) return NextResponse.json({ ok: false, message: "ID inválido." }, { status: 400 });
     const { id } = params.data;
 
-    const authContext = await getAdminApiContext();
+    const authContext = await getReadApiContext();
     if (authContext.response) return authContext.response;
     const organization = authContext.auth!.organization;
 

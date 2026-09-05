@@ -10,7 +10,7 @@ datasource db {
 
 enum UserRole {
   ADMIN
-  MEMBER
+  USER
 }
 
 model Organization {
@@ -62,7 +62,10 @@ model Organization {
 model UserProfile {
   id             String   @id
   organizationId String
-  role           UserRole @default(MEMBER)
+  role           UserRole @default(USER)
+  name           String?
+  email          String?
+  active         Boolean  @default(true)
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
@@ -78,7 +81,7 @@ model UserInvitation {
   organizationId String
   email          String
   tokenHash      String   @unique
-  role           UserRole @default(MEMBER)
+  role           UserRole @default(USER)
   expiresAt      DateTime
   usedAt         DateTime?
   createdById    String

@@ -1,3 +1,4 @@
+import { getReadApiContext } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
 import {
@@ -10,7 +11,7 @@ import { organizationSchema } from "@/lib/validation";
 
 export async function GET() {
   try {
-    const authContext = await getAdminApiContext();
+    const authContext = await getReadApiContext();
     if (authContext.response) return authContext.response;
     const auth = authContext.auth!;
 

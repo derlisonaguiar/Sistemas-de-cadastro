@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminOnly } from "@/components/AccessProvider";
 import Link from "next/link";
 import MemberStatusDialog, { memberStatusLabels as statusLabels } from "@/components/MemberStatusDialog";
 import { useEffect, useState } from "react";
@@ -156,7 +157,7 @@ export default function MembrosPage() {
           </p>
         </div>
 
-        <Link
+        <AdminOnly><Link
           href="/admin/membros/novo"
           className="rounded-md px-4 py-2 text-sm font-medium text-white transition"
           style={{
@@ -165,7 +166,7 @@ export default function MembrosPage() {
           }}
         >
           + Novo membro
-        </Link>
+        </Link></AdminOnly>
       </div>
 
       <div className="rounded-lg border border-gray-200 bg-white">
@@ -274,13 +275,13 @@ export default function MembrosPage() {
                       </td>
 
                       <td className="px-4 py-3">
-                        <button type="button" aria-label={`Alterar status de ${member.fullName}: ${statusLabels[member.status]}`} onClick={() => { setStatusMessage(""); setStatusMember(member); }} className="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200 focus-visible:outline-2">
+                        <AdminOnly fallback={<span className="text-xs">{statusLabels[member.status]}</span>}><button type="button" aria-label={`Alterar status de ${member.fullName}: ${statusLabels[member.status]}`} onClick={() => { setStatusMessage(""); setStatusMember(member); }} className="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200 focus-visible:outline-2">
                           {
                             statusLabels[
                               member.status
                             ]
                           }
-                        </button>
+                        </button></AdminOnly>
                       </td>
 
                       <td className="px-4 py-3">

@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminOnly, useIsAdmin } from "@/components/AccessProvider";
 import Link from "next/link";
 import { documentEntityLabels, documentStatusLabels, documentTypeLabels, type DocumentEntityKey } from "@/lib/document-labels";
 import { useEffect, useState } from "react";
@@ -111,6 +112,7 @@ function linkedTo(document: Document) {
 }
 
 export default function DocumentosPage() {
+  const isAdmin = useIsAdmin();
   const [filters, setFilters] = useState({ origin: "", type: "", status: "", memberId: "", clientId: "", projectId: "", contractId: "", documentDate: "" });
   function changeFilter(key: keyof typeof filters, value: string) { setFilters((current) => ({ ...current, [key]: value })); }
   function entityOptions(key: DocumentEntityKey) {
@@ -144,7 +146,7 @@ export default function DocumentosPage() {
           organizationResponse,
         ] = await Promise.all([
           fetch("/api/documents"),
-          fetch("/api/document-templates"),
+          isAdmin ? fetch("/api/document-templates") : Promise.resolve(Response.json({ ok: true, templates: [] })),
           fetch("/api/organization"),
         ]);
 
@@ -185,7 +187,7 @@ export default function DocumentosPage() {
     }
 
     loadData();
-  }, []);
+  }, [isAdmin]);
 
   const filteredDocuments =
     documents.filter((document) => {
@@ -240,15 +242,15 @@ export default function DocumentosPage() {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <Link href="/admin/documentos/importar" className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium">Importar documento</Link>
-          <Link
+          <AdminOnly><Link href="/admin/documentos/importar" className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium">Importar documento</Link></AdminOnly>
+          <AdminOnly><Link
             href="/admin/documentos/modelos"
             className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
             Gerenciar modelos
-          </Link>
+          </Link></AdminOnly>
 
-          <Link
+          <AdminOnly><Link
             href="/admin/documentos/gerar"
             style={{
               backgroundColor:
@@ -257,11 +259,11 @@ export default function DocumentosPage() {
             className="rounded-md px-4 py-2 text-sm font-medium text-white"
           >
             + Gerar documento
-          </Link>
+          </Link></AdminOnly>
         </div>
       </div>
 
-      <section className="mb-6">
+      <AdminOnly><section className="mb-6">
         <div className="mb-3 flex items-center justify-between gap-3">
           <div>
             <h2 className="font-semibold text-gray-900">
@@ -273,7 +275,7 @@ export default function DocumentosPage() {
             </p>
           </div>
 
-          <Link
+          <AdminOnly><Link
             href="/admin/documentos/novo"
             style={{
               color:
@@ -282,7 +284,7 @@ export default function DocumentosPage() {
             className="text-sm font-medium"
           >
             + Enviar modelo
-          </Link>
+          </Link></AdminOnly>
         </div>
 
         {loading ? (
@@ -300,7 +302,7 @@ export default function DocumentosPage() {
               Envie um modelo DOCX para começar.
             </p>
 
-            <Link
+            <AdminOnly><Link
               href="/admin/documentos/novo"
               style={{
                 backgroundColor:
@@ -309,7 +311,7 @@ export default function DocumentosPage() {
               className="mt-4 inline-block rounded-md px-4 py-2 text-sm font-medium text-white"
             >
               Enviar primeiro modelo
-            </Link>
+            </Link></AdminOnly>
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -343,7 +345,7 @@ export default function DocumentosPage() {
                   </p>
 
                   <div className="mt-5">
-                    <Link
+                    <AdminOnly><Link
                       href={`/admin/documentos/gerar?templateId=${template.id}`}
                       style={{
                         color:
@@ -352,14 +354,14 @@ export default function DocumentosPage() {
                       className="text-sm font-medium"
                     >
                       Gerar documento →
-                    </Link>
+                    </Link></AdminOnly>
                   </div>
                 </div>
               )
             )}
           </div>
         )}
-      </section>
+      </section></AdminOnly>
 
       <section>
         <div className="mb-3">
@@ -411,7 +413,7 @@ export default function DocumentosPage() {
 
               {activeTemplates.length >
                 0 && (
-                <Link
+                <AdminOnly><Link
                   href="/admin/documentos/gerar"
                   style={{
                     backgroundColor:
@@ -420,7 +422,7 @@ export default function DocumentosPage() {
                   className="mt-4 inline-block rounded-md px-4 py-2 text-sm font-medium text-white"
                 >
                   Gerar primeiro documento
-                </Link>
+                </Link></AdminOnly>
               )}
             </div>
           ) : (

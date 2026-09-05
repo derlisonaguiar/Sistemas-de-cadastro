@@ -26,7 +26,7 @@ export async function getAuthenticatedProfile() {
     include: { organization: true },
   });
 
-  return profile ? { user, profile, organization: profile.organization } : null;
+  return profile?.active ? { user, profile, organization: profile.organization } : null;
 }
 
 export async function requireAuthenticatedProfile() {
@@ -39,6 +39,7 @@ export async function requireAuthenticatedProfile() {
   });
 
   if (!profile) throw new AuthError("PROFILE_REQUIRED");
+  if (!profile.active) throw new AuthError("FORBIDDEN");
   return { user, profile, organization: profile.organization };
 }
 
@@ -73,6 +74,16 @@ export function authErrorResponse(error: unknown) {
 export async function getAdminApiContext() {
   try {
     return { auth: await requireAdminProfile(), response: null };
+  } catch (error) {
+    const response = authErrorResponse(error);
+    if (response) return { auth: null, response };
+    throw error;
+  }
+}
+
+export async function getReadApiContext() {
+  try {
+    return { auth: await requireAuthenticatedProfile(), response: null };
   } catch (error) {
     const response = authErrorResponse(error);
     if (response) return { auth: null, response };

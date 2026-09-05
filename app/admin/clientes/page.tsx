@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminOnly } from "@/components/AccessProvider";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -80,13 +81,13 @@ export default function ClientesPage() {
           </p>
         </div>
 
-        <Link
+        <AdminOnly><Link
           href="/admin/clientes/novo"
           style={{ backgroundColor: primaryColor }}
           className="rounded-md px-4 py-2 text-sm font-medium text-white"
         >
           + Novo cliente
-        </Link>
+        </Link></AdminOnly>
       </div>
 
       <div className="mb-4">

@@ -1,16 +1,19 @@
+import { AccessProvider } from "@/components/AccessProvider";
 import type { ReactNode } from "react";
 import AdminSidebar from "@/components/AdminSidebar";
 import AdminHeader from "@/components/AdminHeader";
 import { redirect } from "next/navigation";
-import { AuthError, requireAdminProfile } from "@/lib/auth";
+import { AuthError, requireAuthenticatedProfile } from "@/lib/auth";
 
 type AdminLayoutProps = {
   children: ReactNode;
 };
 
 export default async function AdminLayout({ children }: AdminLayoutProps) {
+  let isAdmin = false;
   try {
-    await requireAdminProfile();
+    const auth = await requireAuthenticatedProfile();
+    isAdmin = auth.profile.role === "ADMIN";
   } catch (error) {
     if (error instanceof AuthError) {
       if (error.code === "UNAUTHORIZED") redirect("/login");
@@ -21,6 +24,7 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
   }
 
   return (
+    <AccessProvider isAdmin={isAdmin}>
     <div className="min-h-screen bg-gray-50">
       <div className="flex min-h-screen">
         <AdminSidebar />
@@ -34,5 +38,6 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
         </div>
       </div>
     </div>
+    </AccessProvider>
   );
 }

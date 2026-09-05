@@ -1,3 +1,4 @@
+import { getReadApiContext } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAdminApiContext } from "@/lib/auth";
@@ -6,7 +7,7 @@ import { projectSchema } from "@/lib/validation";
 
 export async function GET() {
   try {
-    const authContext = await getAdminApiContext();
+    const authContext = await getReadApiContext();
     if (authContext.response) return authContext.response;
     const organization = authContext.auth!.organization;
 

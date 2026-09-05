@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminOnly } from "@/components/AccessProvider";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -124,7 +125,7 @@ export default function AdminSidebar() {
               </li>
             );
           })}
-          <li className="pt-3">
+          <AdminOnly><li className="pt-3">
             <p className="px-3 py-2 text-sm font-semibold text-gray-900">Configurações</p>
             <ul className="ml-3 space-y-1">
               {[
@@ -141,7 +142,7 @@ export default function AdminSidebar() {
                 </li>
               ))}
             </ul>
-          </li>
+          </li></AdminOnly>
         </ul>
       </nav>
     </aside>
