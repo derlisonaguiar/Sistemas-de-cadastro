@@ -25,6 +25,16 @@ export function normalizeTaxId(value: string) {
   return value.replace(/\D/g, "");
 }
 
+export function isValidCpf(value: string) {
+  const digits = normalizeTaxId(value);
+  if (!/^\d{11}$/.test(digits) || /^(\d)\1{10}$/.test(digits)) return false;
+  const digit = (length: number) => {
+    const total = digits.slice(0, length).split("").reduce((sum, current, index) => sum + Number(current) * (length + 1 - index), 0);
+    return (total * 10) % 11 % 10;
+  };
+  return digit(9) === Number(digits[9]) && digit(10) === Number(digits[10]);
+}
+
 export function isValidCpfCnpj(value: string) {
   const digits = normalizeTaxId(value);
   return digits.length === 11 || digits.length === 14;
@@ -33,9 +43,10 @@ export function isValidCpfCnpj(value: string) {
 const optionalTaxId = z.union([z.string(), z.null()]).optional()
   .transform((value) => value ? normalizeTaxId(value) : null)
   .refine((value) => !value || isValidCpfCnpj(value), "CPF/CNPJ deve ter 11 ou 14 dígitos.");
-const optionalCpf = z.union([z.string(), z.null()]).optional()
-  .transform((value) => value ? normalizeTaxId(value) : null)
-  .refine((value) => !value || value.length === 11, "CPF deve ter 11 dígitos.");
+const requiredCpf = z.string().trim()
+  .transform(normalizeTaxId)
+  .refine((value) => value.length > 0, "CPF é obrigatório.")
+  .refine(isValidCpf, "CPF inválido.");
 
 export const organizationSchema = z.object({
   name: requiredText(160).optional(),
@@ -50,7 +61,7 @@ export const organizationSchema = z.object({
 }).strict();
 
 export const memberSchema = z.object({
-  fullName: requiredText(200), email: optionalEmail, cpf: optionalCpf, phone: optionalText(30),
+  fullName: requiredText(200), email: optionalEmail, cpf: requiredCpf, phone: optionalText(30),
   course: optionalText(160), registration: optionalText(80), nationality: optionalText(80),
   maritalStatus: optionalText(50), rg: optionalText(30), rgIssuer: optionalText(30),
   address: optionalText(250), addressNumber: optionalText(30), neighborhood: optionalText(120),
@@ -120,7 +131,10 @@ export const templateFieldSchema = z.object({
 }).strict();
 
 export const documentGenerationSchema = z.object({
-  templateId: idSchema, memberId: idSchema, representativeId: optionalIdSchema,
+  revisionOfId: idSchema.optional(),
+  // A revision derives its immutable generation context from the original
+  // document. New documents still require these two values in the handler.
+  templateId: idSchema.optional(), memberId: idSchema.optional(), representativeId: optionalIdSchema,
   manualValues: z.record(z.string().max(160), z.string().max(5000))
     .refine((value) => Object.keys(value).length <= 100, "Máximo de 100 valores manuais.")
     .default({}),
@@ -130,6 +144,7 @@ export const invitationSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(254), role: z.enum(["ADMIN", "USER"]).default("USER"),
 }).strict();
 export const linkInvitationSchema = z.object({ token: z.string().trim().min(32).max(256) }).strict();
+export const createLocalOrganizationSchema = z.object({ mode: z.literal("create"), organizationName: requiredText(160) }).strict();
 export const loginSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(254),
   password: z.string().min(6).max(256),

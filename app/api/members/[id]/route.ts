@@ -9,6 +9,12 @@ import { verifyAdminPassword } from "@/lib/admin-password";
 import { z } from "zod";
 import { memberSchema, routeIdSchema } from "@/lib/validation";
 
+function isCpfConflict(error: unknown) {
+  if (typeof error !== "object" || !error || !("code" in error) || error.code !== "P2002" || !("meta" in error)) return false;
+  const target = (error.meta as { target?: unknown })?.target;
+  return Array.isArray(target) && target.includes("cpf");
+}
+
 type RouteContext = {
   params: Promise<{
     id: string;
@@ -178,6 +184,14 @@ export async function PUT(
 
     const status =
       data.status || "ACTIVE";
+
+    const memberWithCpf = await prisma.member.findFirst({
+      where: { organizationId: organization.id, cpf: data.cpf, id: { not: existingMember.id } },
+      select: { id: true },
+    });
+    if (memberWithCpf) {
+      return NextResponse.json({ ok: false, message: "Já existe um membro cadastrado com este CPF." }, { status: 409 });
+    }
 
     let selectedDirectorate = null;
 
@@ -393,8 +407,8 @@ export async function PUT(
           email:
             data.email?.trim() || null,
 
-          cpf:
-            data.cpf?.trim() || null,
+          cpf: data.cpf,
+          cpfNeedsReview: false,
 
           phone:
             data.phone?.trim() || null,
@@ -466,6 +480,9 @@ export async function PUT(
     });
   } catch (error) {
     console.error("Erro ao atualizar membro:", error);
+    if (isCpfConflict(error)) {
+      return NextResponse.json({ ok: false, message: "Já existe um membro cadastrado com este CPF." }, { status: 409 });
+    }
     return databaseErrorResponse(error);
   }
 }

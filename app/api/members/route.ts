@@ -6,6 +6,12 @@ import { getAdminApiContext } from "@/lib/auth";
 import { databaseErrorResponse, parseJsonRequest } from "@/lib/api";
 import { memberSchema } from "@/lib/validation";
 
+function isCpfConflict(error: unknown) {
+  if (typeof error !== "object" || !error || !("code" in error) || error.code !== "P2002" || !("meta" in error)) return false;
+  const target = (error.meta as { target?: unknown })?.target;
+  return Array.isArray(target) && target.includes("cpf");
+}
+
 export async function GET() {
   try {
     const authContext = await getReadApiContext();
@@ -93,6 +99,14 @@ export async function POST(request: Request) {
     }
 
     const status = data.status || "ACTIVE";
+
+    const memberWithCpf = await prisma.member.findFirst({
+      where: { organizationId: organization.id, cpf: data.cpf },
+      select: { id: true },
+    });
+    if (memberWithCpf) {
+      return NextResponse.json({ ok: false, message: "Já existe um membro cadastrado com este CPF." }, { status: 409 });
+    }
 
     let selectedDirectorate = null;
 
@@ -273,7 +287,8 @@ export async function POST(request: Request) {
         fullName,
 
         email: data.email?.trim() || null,
-        cpf: data.cpf?.trim() || null,
+        cpf: data.cpf,
+        cpfNeedsReview: false,
         phone: data.phone?.trim() || null,
 
         course: data.course?.trim() || null,
@@ -323,6 +338,9 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     console.error("Erro ao cadastrar membro:", error);
+    if (isCpfConflict(error)) {
+      return NextResponse.json({ ok: false, message: "Já existe um membro cadastrado com este CPF." }, { status: 409 });
+    }
     return databaseErrorResponse(error);
   }
 }

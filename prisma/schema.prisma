@@ -54,6 +54,8 @@ model Organization {
   documentTemplates DocumentTemplate[]
   certificateAssets CertificateAsset[]
   userInvitations   UserInvitation[]
+  backupSettings    BackupSettings?
+  backupAudits      BackupAudit[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -148,6 +150,29 @@ enum DocumentStatus {
   CANCELED
 }
 
+model BackupSettings {
+  organizationId String @id
+  destination    String @default("LOCAL")
+  frequency      String @default("MANUAL")
+  lastBackupAt   DateTime?
+  lastBackupById String?
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model BackupAudit {
+  id             String @id @default(cuid())
+  organizationId String
+  userId         String
+  operation      String
+  summary        Json?
+  createdAt      DateTime @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, createdAt])
+}
+
 enum DocumentOrigin {
   GENERATED
   IMPORTED
@@ -203,7 +228,9 @@ model Member {
   fullName String
   email    String?
   cpf      String?
+  cpfNeedsReview Boolean @default(false)
   phone    String?
+  photoUrl String?
 
   course       String?
   registration String?

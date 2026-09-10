@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getAdminApiContext } from "@/lib/auth";
 import { checkRateLimit, internalErrorResponse, parseJsonRequest } from "@/lib/api";
 import { documentGenerationSchema } from "@/lib/validation";
+import { getDocumentReview, reviewTemplateVersion } from "@/lib/document-review";
 import { createSignedStorageUrl, downloadStorageObject, removeStorageObject, uploadPrivateObject } from "@/lib/storage";
 
 import fs from "fs/promises";
@@ -207,8 +208,25 @@ export async function POST(
 
     const parsed = await parseJsonRequest(request, documentGenerationSchema);
     if (parsed.response) return parsed.response;
-    const { templateId, memberId, manualValues } = parsed.data!;
-    const representativeId = parsed.data!.representativeId || "";
+    let { templateId, memberId, manualValues } = parsed.data!;
+    let representativeId = parsed.data!.representativeId || "";
+    const previous = parsed.data!.revisionOfId ? await prisma.document.findFirst({
+      where: { id: parsed.data!.revisionOfId, organizationId }, include: { template: { include: { fields: true } } },
+    }) : null;
+    const review = previous ? getDocumentReview(previous, previous.template) : null;
+    if (parsed.data!.revisionOfId) {
+      if (!previous || !review) return NextResponse.json({ ok: false, message: "Este documento não permite revisão ou o modelo original foi alterado." }, { status: 409 });
+      if (Object.keys(manualValues).some((key) => !review.fields.some((field) => field.key === key))) {
+        return NextResponse.json({ ok: false, message: "Somente campos manuais permitidos podem ser editados." }, { status: 400 });
+      }
+      manualValues = { ...review.values, ...manualValues };
+      if (review.fields.some((field) => field.required && !manualValues[field.key]?.trim())) {
+        return NextResponse.json({ ok: false, message: "Preencha os campos obrigatórios." }, { status: 400 });
+      }
+      templateId = previous.templateId!;
+      memberId = previous.memberId!;
+      representativeId = review.content._representativeId || "";
+    }
 
     if (!templateId) {
       return NextResponse.json(
@@ -269,6 +287,10 @@ export async function POST(
           status: 400,
         }
       );
+    }
+
+    if (review && previous?.template && reviewTemplateVersion(template) !== reviewTemplateVersion(previous.template)) {
+      return NextResponse.json({ ok: false, message: "O modelo foi alterado. Recarregue o documento." }, { status: 409 });
     }
 
     if (!template.originalFileUrl) {
@@ -417,7 +439,7 @@ export async function POST(
       );
     }
 
-    const selectedLogoUrl =
+    const selectedLogoUrl = review ? review.content._logoSource :
       template.organization
         .documentLogoUrl ||
       template.organization
@@ -446,7 +468,7 @@ export async function POST(
       logoPath = null;
     }
 
-    const sourceData = {
+    let sourceData = {
       organization: {
         id:
           template.organization.id,
@@ -699,6 +721,8 @@ export async function POST(
         manualValues,
     };
 
+    if (review) sourceData = { ...sourceData, ...review.content, manual: { ...review.content.manual, ...manualValues } };
+
     const generatedDirectory = workingDirectory;
     const temporaryDirectory = workingDirectory;
 
@@ -774,8 +798,14 @@ export async function POST(
           memberId:
             member.id,
 
+          clientId: previous?.clientId,
+          projectId: previous?.projectId,
+          contractId: previous?.contractId,
+          description: previous?.description,
+          organizationDocument: previous?.organizationDocument,
+
           title:
-            `${template.name} - ${member.fullName}`,
+            previous?.title || `${template.name} - ${member.fullName}`,
 
           type:
             template.type,
@@ -788,6 +818,9 @@ export async function POST(
 
           content:
             JSON.stringify({
+              ...sourceData,
+              _reviewTemplateUpdatedAt: reviewTemplateVersion(template),
+              _revisionOfId: previous?.id || null,
               organization:
                 sourceData.organization,
 

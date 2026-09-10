@@ -86,6 +86,11 @@ export function validateImageUpload(buffer: Buffer, file: File) {
     const kind = buffer.subarray(12, 16).toString("ascii");
     if (kind === "VP8X" && buffer.length >= 30) {
       width = 1 + buffer.readUIntLE(24, 3); height = 1 + buffer.readUIntLE(27, 3);
+    } else if (kind === "VP8 " && buffer.length >= 30 && buffer.subarray(23, 26).equals(Buffer.from([0x9d, 0x01, 0x2a]))) {
+      width = buffer.readUInt16LE(26) & 0x3fff; height = buffer.readUInt16LE(28) & 0x3fff;
+    } else if (kind === "VP8L" && buffer.length >= 25 && buffer[20] === 0x2f) {
+      width = 1 + buffer[21] + ((buffer[22] & 0x3f) << 8);
+      height = 1 + (buffer[22] >> 6) + (buffer[23] << 2) + ((buffer[24] & 0x0f) << 10);
     }
   } else {
     throw new Error("INVALID_IMAGE_SIGNATURE");

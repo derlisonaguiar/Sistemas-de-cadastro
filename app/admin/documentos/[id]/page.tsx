@@ -1,11 +1,11 @@
 "use client";
 
 import { AdminOnly } from "@/components/AccessProvider";
-import Link from "next/link";
+import DocumentReview, { type ReviewableDocument } from "@/components/documents/DocumentReview";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
-type Document = {
+type Document = ReviewableDocument & {
   origin: string;
   documentDate: string | null;
   importedAt: string | null;
@@ -45,10 +45,6 @@ type Document = {
     id: string;
     title: string;
   } | null;
-};
-
-type Organization = {
-  primaryColor: string;
 };
 
 function typeLabel(type: string) {
@@ -107,8 +103,6 @@ export default function DocumentoPage() {
   const id = params.id as string;
 
   const [document, setDocument] = useState<Document | null>(null);
-  const [organization, setOrganization] =
-    useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -134,15 +128,8 @@ export default function DocumentoPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [documentResponse, organizationResponse] =
-          await Promise.all([
-            fetch(`/api/documents/${id}`),
-            fetch("/api/organization"),
-          ]);
-
+        const documentResponse = await fetch(`/api/documents/${id}`);
         const documentData = await documentResponse.json();
-        const organizationData =
-          await organizationResponse.json();
 
         if (documentData.ok) {
           setDocument(documentData.document);
@@ -153,9 +140,6 @@ export default function DocumentoPage() {
           );
         }
 
-        if (organizationData.ok) {
-          setOrganization(organizationData.organization);
-        }
       } catch (error) {
         console.error("Erro ao carregar documento:", error);
         setMessage("Erro ao carregar documento.");
@@ -221,7 +205,7 @@ export default function DocumentoPage() {
     );
   }
 
-  const primaryColor = `var(--admin-primary, ${organization?.primaryColor})`;
+
 
   return (
     <div className="max-w-6xl">
@@ -243,12 +227,9 @@ export default function DocumentoPage() {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {(document.generatedPdfUrl || document.generatedDocxUrl) && (
-            <a href={document.generatedPdfUrl || document.generatedDocxUrl || undefined} target="_blank" rel="noopener noreferrer" className="rounded-md border px-4 py-2 text-sm">Abrir original gerado</a>
-          )}
           {document.signedFile ? (
             <a href={`/api/documents/${document.id}/download?variant=signed`} target="_blank" rel="noopener noreferrer" className="rounded-md border px-4 py-2 text-sm">Abrir assinado · enviado em {formatDate(document.signedAt)}</a>
-          ) : (
+          ) : document.origin === "GENERATED" ? (
             <AdminOnly><label className="rounded-md border px-4 py-2 text-sm">
               {uploading ? "Enviando..." : "Enviar assinado (PDF, até 10 MB)"}
               <input type="file" accept="application/pdf,.pdf" disabled={uploading} className="block text-xs" onChange={(event) => {
@@ -257,33 +238,14 @@ export default function DocumentoPage() {
                 event.target.value = "";
               }} />
             </label></AdminOnly>
-          )}
-          {document.fileUrl && (
-            <a
-              href={`/api/documents/${document.id}/download`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              Abrir arquivo
-            </a>
-          )}
-
-          <AdminOnly><Link
-            href={`/admin/documentos/${document.id}/editar`}
-            style={{ backgroundColor: primaryColor }}
-            className="rounded-md px-4 py-2 text-sm font-medium text-white"
-          >
-            Editar documento
-          </Link></AdminOnly>
-
-          <AdminOnly><button
+          ) : null}
+          {document.origin === "GENERATED" && <AdminOnly><button
             type="button"
             onClick={handleDelete}
             className="rounded-md border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
           >
             Excluir
-          </button></AdminOnly>
+          </button></AdminOnly>}
         </div>
       </div>
 
@@ -298,6 +260,7 @@ export default function DocumentoPage() {
         <p className="break-all">SHA-256: {document.importedFileHash}</p>
         {document.duplicateReason && <p>Justificativa da cópia: {document.duplicateReason}</p>}
       </div>}
+      <DocumentReview key={document.id} document={document} />
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-lg border border-gray-200 bg-white">
           <div className="border-b border-gray-200 px-5 py-4">

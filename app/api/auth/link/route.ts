@@ -2,8 +2,8 @@ import { createHash } from "crypto";
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { checkRateLimit, parseJsonRequest } from "@/lib/api";
-import { linkInvitationSchema } from "@/lib/validation";
+import { checkRateLimit } from "@/lib/api";
+import { createLocalOrganizationSchema, linkInvitationSchema } from "@/lib/validation";
 
 function hashToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
@@ -32,10 +32,6 @@ export async function POST(request: Request) {
       );
     }
 
-    const parsed = await parseJsonRequest(request, linkInvitationSchema);
-    if (parsed.response) return parsed.response;
-    const { token } = parsed.data!;
-
     const email = user.email?.trim().toLowerCase();
     if (!email) {
       return NextResponse.json(
@@ -43,6 +39,22 @@ export async function POST(request: Request) {
         { status: 403 }
       );
     }
+
+    const body = await request.json().catch(() => null);
+    const createOrganization = createLocalOrganizationSchema.safeParse(body);
+    if (createOrganization.success) {
+      const profile = await prisma.$transaction(async (transaction) => {
+        const stillUnlinked = await transaction.userProfile.findUnique({ where: { id: user.id }, select: { id: true } });
+        if (stillUnlinked) throw new Error("PROFILE_ALREADY_LINKED");
+        const organization = await transaction.organization.create({ data: { name: createOrganization.data.organizationName } });
+        return transaction.userProfile.create({ data: { id: user.id, organizationId: organization.id, role: "ADMIN", email, name: user.user_metadata?.name || null }, select: { id: true, organizationId: true, role: true } });
+      });
+      return NextResponse.json({ ok: true, profile });
+    }
+
+    const parsed = linkInvitationSchema.safeParse(body);
+    if (!parsed.success) return NextResponse.json({ ok: false, message: "Informe um convite válido ou o nome da organização." }, { status: 400 });
+    const { token } = parsed.data;
 
     const invitation = await prisma.userInvitation.findUnique({
       where: { tokenHash: hashToken(token) },
@@ -85,6 +97,8 @@ export async function POST(request: Request) {
         { status: 409 }
       );
     }
+    if (error instanceof Error && error.message === "PROFILE_ALREADY_LINKED") return NextResponse.json({ ok: false, message: "Usuário já vinculado a uma organização." }, { status: 409 });
+    if (typeof error === "object" && error && "code" in error && error.code === "P2002") return NextResponse.json({ ok: false, message: "Usuário já vinculado a uma organização." }, { status: 409 });
     console.error("Erro ao vincular usuário:", error);
     return NextResponse.json(
       { ok: false, message: "Erro ao vincular usuário." },

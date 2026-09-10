@@ -4,6 +4,7 @@ import { AdminOnly } from "@/components/AccessProvider";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import MemberAvatar from "@/components/MemberAvatar";
 
 type DocumentItem = {
   origin: string;
@@ -30,6 +31,8 @@ type Member = {
   email: string | null;
   cpf: string | null;
   phone: string | null;
+  photoUrl: string | null;
+  cpfNeedsReview: boolean;
 
   course: string | null;
   registration: string | null;
@@ -323,9 +326,12 @@ export default function MembroPage() {
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-3">
+            <MemberAvatar name={member.fullName} photoUrl={member.photoUrl} size="lg" />
             <h1 className="text-2xl font-semibold text-gray-900">
               {member.fullName}
             </h1>
+
+            {member.cpfNeedsReview && <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-800">CPF pendente</span>}
 
             <span className="rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">
               {statusLabel(

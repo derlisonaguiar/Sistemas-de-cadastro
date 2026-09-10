@@ -106,6 +106,7 @@ export default function AdminSidebar() {
                 { label: "Organização", href: "/admin/configuracoes" },
                 { label: "Diretorias", href: "/admin/configuracoes/diretorias" },
                 { label: "Cargos", href: "/admin/configuracoes/cargos" },
+                { label: "Backup", href: "/admin/configuracoes/backup" },
               ].map((item) => (
                 <li key={item.href}>
                   <Link href={item.href} aria-current={pathname === item.href ? "page" : undefined}

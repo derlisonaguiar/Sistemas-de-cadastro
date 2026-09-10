@@ -15,6 +15,7 @@
     "@prisma/client": "^6.12.0",
     "@supabase/ssr": "^0.12.5",
     "@supabase/supabase-js": "^2.112.4",
+    "docx-preview": "^0.4.0",
     "docxtemplater": "^3.69.3",
     "dotenv": "^17.4.2",
     "konva": "^10.3.2",
@@ -27,6 +28,7 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-konva": "^19.2.5",
+    "xlsx": "^0.18.5",
     "zod": "^4.5.4"
   },
   "devDependencies": {

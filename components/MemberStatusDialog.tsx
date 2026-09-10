@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { memberStatusLabels } from "@/lib/member-export";
 
-export const memberStatusLabels = {
-  ACTIVE: "Ativo", INACTIVE: "Inativo", LEAVE: "Afastado", ALUMNI: "Egresso", POS_JR: "Pós-Jr",
-};
+export { memberStatusLabels };
 
 export default function MemberStatusDialog<T extends { id: string; fullName: string; status: keyof typeof memberStatusLabels }>({
   member, onClose, onUpdated,

@@ -6,6 +6,7 @@ import { parseJsonRequest } from "@/lib/api";
 import { documentSchema, routeIdSchema } from "@/lib/validation";
 import { createSignedStorageUrl } from "@/lib/storage";
 import { DocumentImportError, validateDocumentLinks } from "@/lib/document-import";
+import { getDocumentReview } from "@/lib/document-review";
 
 type RouteContext = {
   params: Promise<{
@@ -42,6 +43,7 @@ export async function GET(
         organizationId: organization.id,
       },
       include: {
+        template: { include: { fields: true } },
         member: true,
         client: true,
         project: true,
@@ -59,10 +61,13 @@ export async function GET(
       );
     }
 
+    const review = getDocumentReview(document, document.template);
     return NextResponse.json({
       ok: true,
       document: {
         ...document,
+        template: undefined,
+        review: review ? { fields: review.fields, values: review.values } : null,
         signedFile: document.signedFile ? await createSignedStorageUrl(document.signedFile) : null,
         fileUrl: document.fileUrl ? await createSignedStorageUrl(document.fileUrl) : null,
         generatedDocxUrl: document.generatedDocxUrl ? await createSignedStorageUrl(document.generatedDocxUrl) : null,

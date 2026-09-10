@@ -22,6 +22,7 @@ type Member = {
   fullName: string;
   email: string | null;
   cpf: string | null;
+  cpfNeedsReview: boolean;
   phone: string | null;
   nationality: string | null;
   maritalStatus: string | null;
@@ -51,6 +52,8 @@ export default function EditarMembroPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [cpfNeedsReview, setCpfNeedsReview] = useState(false);
 
   const [directorates, setDirectorates] = useState<Directorate[]>([]);
   const [positions, setPositions] = useState<Position[]>([]);
@@ -104,6 +107,7 @@ export default function EditarMembroPage() {
         }
 
         const member: Member = memberData.member;
+        setCpfNeedsReview(member.cpfNeedsReview);
 
         setForm({
           fullName: member.fullName || "",
@@ -230,6 +234,15 @@ export default function EditarMembroPage() {
     }));
   }
 
+  async function uploadPhoto() {
+    if (!photo) return;
+    const formData = new FormData();
+    formData.set("file", photo);
+    const response = await fetch(`/api/members/${id}/photo`, { method: "POST", body: formData });
+    const data = await response.json();
+    if (!response.ok || !data.ok) throw new Error(data.message || "Não foi possível enviar a foto.");
+  }
+
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
 
@@ -257,13 +270,13 @@ export default function EditarMembroPage() {
         return;
       }
 
+      await uploadPhoto();
+
       router.push(`/admin/membros/${id}`);
     } catch (error) {
       console.error("Erro ao atualizar membro:", error);
 
-      setMessage(
-        "Erro ao atualizar membro."
-      );
+      setMessage(error instanceof Error ? error.message : "Erro ao atualizar membro.");
     } finally {
       setSaving(false);
     }
@@ -287,6 +300,7 @@ export default function EditarMembroPage() {
         <p className="mt-1 text-sm text-gray-600">
           Atualize os dados pessoais, acadêmicos e organizacionais do membro.
         </p>
+        {cpfNeedsReview && <p className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">Este membro foi importado com CPF ausente ou inválido. Corrija o CPF para remover a pendência.</p>}
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -297,7 +311,12 @@ export default function EditarMembroPage() {
             </h2>
           </div>
 
-          <div className="grid gap-4 p-5 md:grid-cols-2">
+            <div className="grid gap-4 p-5 md:grid-cols-2">
+              <div className="md:col-span-2">
+                <label className="mb-1 block text-sm font-medium text-gray-700">Substituir foto de perfil (opcional)</label>
+                <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setPhoto(event.target.files?.[0] || null)} className="block w-full text-sm" />
+                <p className="mt-1 text-xs text-gray-500">JPG, PNG ou WebP, até 2 MB.</p>
+              </div>
             <div className="md:col-span-2">
               <label className="mb-1 block text-sm font-medium text-gray-700">
                 Nome completo *
@@ -351,6 +370,7 @@ export default function EditarMembroPage() {
 
               <input
                 type="text"
+                required
                 value={form.cpf}
                 onChange={(e) =>
                   updateField("cpf", e.target.value)

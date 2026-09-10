@@ -3,6 +3,9 @@
 import { AdminOnly } from "@/components/AccessProvider";
 import Link from "next/link";
 import MemberStatusDialog, { memberStatusLabels as statusLabels } from "@/components/MemberStatusDialog";
+import MemberExportDialog from "@/components/MemberExportDialog";
+import MemberImportDialog from "@/components/MemberImportDialog";
+import MemberAvatar from "@/components/MemberAvatar";
 import { useEffect, useState } from "react";
 
 type Directorate = {
@@ -21,6 +24,8 @@ type Member = {
   email: string | null;
   cpf: string | null;
   phone: string | null;
+  photoUrl: string | null;
+  cpfNeedsReview: boolean;
   course: string | null;
   registration: string | null;
   entryDate: string | null;
@@ -45,6 +50,8 @@ export default function MembrosPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [exportOpen, setExportOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -144,6 +151,8 @@ export default function MembrosPage() {
         setStatusMember(null);
         setStatusMessage("Status atualizado com sucesso.");
       }} />}
+      {exportOpen && <MemberExportDialog onClose={() => setExportOpen(false)} />}
+      {importOpen && <MemberImportDialog onClose={() => setImportOpen(false)} onImported={() => { setLoading(true); fetch("/api/members").then((response) => response.json()).then((data) => { if (data.ok) setMembers(data.members); }).finally(() => setLoading(false)); }} />}
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">
@@ -155,16 +164,20 @@ export default function MembrosPage() {
           </p>
         </div>
 
-        <AdminOnly><Link
-          href="/admin/membros/novo"
-          className="rounded-md px-4 py-2 text-sm font-medium text-white transition"
-          style={{
-            backgroundColor:
-              primaryColor,
-          }}
-        >
-          + Novo membro
-        </Link></AdminOnly>
+        <div className="flex gap-2">
+          <AdminOnly><button type="button" onClick={() => setImportOpen(true)} className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50">Importar membros</button></AdminOnly>
+          <button type="button" onClick={() => setExportOpen(true)} className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50">Exportar</button>
+          <AdminOnly><Link
+            href="/admin/membros/novo"
+            className="rounded-md px-4 py-2 text-sm font-medium text-white transition"
+            style={{
+              backgroundColor:
+                primaryColor,
+            }}
+          >
+            + Novo membro
+          </Link></AdminOnly>
+        </div>
       </div>
 
       <div className="rounded-lg border border-gray-200 bg-white">
@@ -245,7 +258,7 @@ export default function MembrosPage() {
                       className="hover:bg-gray-50"
                     >
                       <td className="px-4 py-3 font-medium text-gray-900">
-                        {member.fullName}
+                        <div className="flex items-center gap-3"><MemberAvatar name={member.fullName} photoUrl={member.photoUrl} /><span>{member.fullName}{member.cpfNeedsReview && <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">CPF pendente</span>}</span></div>
                       </td>
 
                       <td className="px-4 py-3 text-gray-600">

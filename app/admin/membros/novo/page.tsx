@@ -23,6 +23,7 @@ export default function NovoMembroPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [photo, setPhoto] = useState<File | null>(null);
 
   const [directorates, setDirectorates] = useState<Directorate[]>([]);
   const [positions, setPositions] = useState<Position[]>([]);
@@ -209,6 +210,15 @@ export default function NovoMembroPage() {
     }));
   }
 
+  async function uploadPhoto(memberId: string) {
+    if (!photo) return;
+    const formData = new FormData();
+    formData.set("file", photo);
+    const response = await fetch(`/api/members/${memberId}/photo`, { method: "POST", body: formData });
+    const data = await response.json();
+    if (!response.ok || !data.ok) throw new Error(data.message || "Não foi possível enviar a foto.");
+  }
+
   async function handleSubmit(
     event: React.FormEvent
   ) {
@@ -250,6 +260,7 @@ export default function NovoMembroPage() {
       }
 
       if (data.member?.id) {
+        await uploadPhoto(data.member.id);
         router.push(
           `/admin/membros/${data.member.id}`
         );
@@ -266,9 +277,7 @@ export default function NovoMembroPage() {
         error
       );
 
-      setMessage(
-        "Erro ao cadastrar membro."
-      );
+      setMessage(error instanceof Error ? error.message : "Erro ao cadastrar membro.");
     } finally {
       setSaving(false);
     }
@@ -300,14 +309,19 @@ export default function NovoMembroPage() {
         onSubmit={handleSubmit}
         className="space-y-6"
       >
-        <section className="rounded-lg border border-gray-200 bg-white">
+          <section className="rounded-lg border border-gray-200 bg-white">
           <div className="border-b border-gray-200 px-5 py-4">
             <h2 className="font-semibold text-gray-900">
               Dados pessoais
             </h2>
           </div>
 
-          <div className="grid gap-4 p-5 md:grid-cols-2">
+            <div className="grid gap-4 p-5 md:grid-cols-2">
+              <div className="md:col-span-2">
+                <label className="mb-1 block text-sm font-medium text-gray-700">Foto de perfil (opcional)</label>
+                <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setPhoto(event.target.files?.[0] || null)} className="block w-full text-sm" />
+                <p className="mt-1 text-xs text-gray-500">JPG, PNG ou WebP, até 2 MB.</p>
+              </div>
             <div className="md:col-span-2">
               <label className="mb-1 block text-sm font-medium text-gray-700">
                 Nome completo *
@@ -370,6 +384,7 @@ export default function NovoMembroPage() {
 
               <input
                 type="text"
+                required
                 value={form.cpf}
                 onChange={(e) =>
                   updateField(

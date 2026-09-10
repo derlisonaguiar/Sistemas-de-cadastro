@@ -683,7 +683,7 @@ function GerarDocumentoContent() {
       }
 
       setGeneratedDocxUrl(
-        data.generatedDocxUrl
+        `/admin/documentos/${data.document.id}`
       );
 
       setMessage(
@@ -765,11 +765,9 @@ function GerarDocumentoContent() {
 
           <a
             href={generatedDocxUrl}
-            target="_blank"
-            rel="noreferrer"
             className="mt-3 inline-flex rounded-md bg-green-700 px-4 py-2 text-sm font-medium text-white"
           >
-            Baixar DOCX
+            Visualizar e revisar
           </a>
         </div>
       )}
