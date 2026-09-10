@@ -687,9 +687,7 @@ export default function NovoMembroPage() {
 
               <select
                 id="directorateId" disabled={form.status === "POS_JR"}
-                value={
-                  form.directorateId
-                }
+                value={form.directorateId}
                 onChange={(e) =>
                   updateField(
                     "directorateId",

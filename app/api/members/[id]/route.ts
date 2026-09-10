@@ -461,8 +461,7 @@ export async function PUT(
 
           status,
 
-          directorateId:
-            data.directorateId || null,
+          directorateId: data.directorateId || null,
 
           positionId:
             data.positionId || null,
