@@ -97,6 +97,7 @@ function harness({ foreign, mismatch, failWrite, existingBytes } = {}) {
       removeStorageObject: async (ref) => {
         removed.push(ref);
       },
+      createPrivateFileUrl: (reference) => `/api/files?ref=${encodeURIComponent(reference)}`,
     },
   });
   return { ...service, records, uploads, removed, lookups, db };
@@ -284,6 +285,10 @@ test("download uses temporary signed URL and blocks IDOR/missing original", asyn
           calls.push(args);
           return "https://storage.example/signed?token=temporary";
         },
+        createPrivateFileUrl: (...args) => {
+          calls.push(args);
+          return "https://storage.example/signed?token=temporary";
+        },
       },
     });
     const r = await GET(
@@ -297,7 +302,6 @@ test("download uses temporary signed URL and blocks IDOR/missing original", asyn
       assert.equal(calls.length, 0);
     } else {
       assert.equal(r.status, 307);
-      assert.equal(calls[0][1], 300);
       assert.equal(calls[0][0], "storage://private/" + variant);
       assert.match(r.headers.get("location"), /signed\?token=/);
     }
@@ -371,7 +375,7 @@ test("document listing includes imported and generated files with signed URLs", 
         },
       },
     },
-    "@/lib/storage": { createSignedStorageUrl: async () => "https://storage.example/signed?temporary=1" },
+    "@/lib/storage": { createPrivateFileUrl: () => "https://storage.example/signed?temporary=1" },
   });
   const response = await GET(new Request("https://app.example/api/documents?clientId=client"));
   assert.equal(response.status, 200);

@@ -118,33 +118,18 @@ test("existing database business-rule conflict returns generic conflict", async 
   const h = setup({ failure: true });
   assert.equal((await h.call()).status, 409);
 });
-test("Supabase verifies authenticated user identity without persisting session or exposing errors", async () => {
-  for (const outcome of ["success", "wrong-user", "error", "throw"]) {
-    let options;
+test("verifica a senha local do ADMIN sem expor detalhes", async () => {
+  for (const outcome of ["success", "inactive", "invalid"]) {
     const { verifyAdminPassword } = load("lib/admin-password.ts", {
-      "@supabase/supabase-js": {
-        createClient: (_url, _key, config) => {
-          options = config;
-          return {
-            auth: {
-              signInWithPassword: async (credentials) => {
-                assert.deepEqual(credentials, { email: "admin@example.com", password: "test-only" });
-                if (outcome === "throw") throw new Error("private auth details");
-                return {
-                  data: { user: { id: outcome === "wrong-user" ? "other" : "admin" } },
-                  error: outcome === "error" ? { message: "private auth details" } : null,
-                };
-              },
-            },
-          };
-        },
+      "@/lib/prisma": {
+        prisma: { authUser: { findUnique: async () => ({ passwordHash: "hash", active: outcome !== "inactive" }) } },
       },
+      "@/lib/local-auth": { verifyPassword: async () => outcome === "success" },
     });
     assert.equal(
       await verifyAdminPassword({ id: "admin", email: "admin@example.com" }, "test-only"),
       outcome === "success"
     );
-    assert.deepEqual(options.auth, { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false });
   }
 });
 test("existing proxy rejects cross-origin PATCH", async () => {

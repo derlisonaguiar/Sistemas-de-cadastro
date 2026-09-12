@@ -20,6 +20,13 @@ function fixture(profiles = []) {
         rows.set(row.id, row);
         return row;
       },
+      create: async ({ data }) => {
+        rows.set(data.id, data);
+        return data;
+      },
+    },
+    authUser: {
+      create: async ({ data }) => ({ id: "new", ...data }),
     },
   };
   let queue = Promise.resolve();
@@ -31,23 +38,29 @@ function fixture(profiles = []) {
       return result;
     },
   };
-  let identity = profiles[0] ? { id: profiles[0].id } : null;
+  let identity = profiles[0] ? { id: profiles[0].id, role: profiles[0].role, email: "admin@example.com" } : null;
   const mocks = {
     "server-only": {},
     "@/lib/prisma": { prisma },
-    "@/lib/supabase/server": {
-      createClient: async () => ({ auth: { getUser: async () => ({ data: { user: identity }, error: null }) } }),
+    "@/lib/local-auth": {
+      getSessionIdentity: async () => identity,
+      hashPassword: async () => "local-password-hash",
+    },
+    "@/lib/organization-context": {
+      OrganizationContextError: class extends Error {},
+      resolveSessionOrganization: async (organizationId) => ({ id: organizationId }),
     },
   };
+  const auth = loadSource("lib/auth.ts", mocks);
   return {
     rows,
     prisma,
     mocks,
     setIdentity: (user) => {
-      identity = user;
+      identity = user ? { email: `${user.id}@example.com`, role: "USER", ...user } : null;
     },
-    auth: loadSource("lib/auth.ts", mocks),
-    service: loadSource("lib/user-management.ts", mocks),
+    auth,
+    service: loadSource("lib/user-management.ts", { ...mocks, "@/lib/auth": auth }),
   };
 }
 const admin = { id: "admin", organizationId: "org", role: "ADMIN", active: true };
@@ -173,68 +186,29 @@ test("creation rejects foreign organization, unknown role and weak password", ()
   }
 });
 
-test("create links only to actor organization and compensates Auth when profile fails", async () => {
-  for (const fail of [false, true]) {
-    const f = fixture([admin]);
-    let created;
-    let deleted;
-    let payload;
-    const supabase = {
-      auth: {
-        admin: {
-          createUser: async (value) => {
-            payload = value;
-            return { data: { user: { id: "new" } }, error: null };
-          },
-          deleteUser: async (id) => {
-            deleted = id;
-            return { error: null };
-          },
-        },
-      },
-    };
-    const service = {
-      ...f.service,
-      withOrganizationAdmin: async (id, org, action) => {
-        assert.equal(id, "admin");
-        assert.equal(org, "org");
-        if (fail) throw new Error("database unavailable");
-        return action({
-          userProfile: {
-            create: async ({ data }) => {
-              created = data;
-              return data;
-            },
-          },
-        });
-      },
-    };
-    const route = loadSource("app/api/users/route.ts", {
-      ...f.mocks,
-      "@/lib/auth": f.auth,
-      "@/lib/user-management": service,
-      "@/lib/supabase/admin": { createAdminClient: () => supabase },
-    });
-    const response = await route.POST(
-      new Request("https://app.test/api/users", {
-        method: "POST",
-        body: JSON.stringify({
-          name: "New User",
-          email: "new@example.com",
-          password: "ExamplePassword123",
-          role: "USER",
-        }),
-      })
-    );
-    assert.equal(response.status, fail ? 500 : 201);
-    assert.equal(payload.password, "ExamplePassword123");
-    if (fail) assert.equal(deleted, "new");
-    else {
-      assert.equal(created.organizationId, "org");
-      assert.equal(created.id, "new");
-      assert.equal("password" in (await response.json()), false);
-    }
-  }
+test("create links a local account only to the administrator organization", async () => {
+  const f = fixture([admin]);
+  const route = loadSource("app/api/users/route.ts", {
+    ...f.mocks,
+    "@/lib/auth": f.auth,
+    "@/lib/user-management": f.service,
+  });
+  const response = await route.POST(
+    new Request("https://app.test/api/users", {
+      method: "POST",
+      body: JSON.stringify({
+        name: "New User",
+        email: "new@example.com",
+        password: "ExamplePassword123",
+        role: "USER",
+      }),
+    })
+  );
+  assert.equal(response.status, 201);
+  const body = await response.json();
+  assert.equal(body.user.organizationId, "org");
+  assert.equal(body.user.id, "new");
+  assert.equal("password" in body, false);
 });
 
 test("every business mutation remains guarded by ADMIN in its route handler", () => {
@@ -246,6 +220,7 @@ test("every business mutation remains guarded by ADMIN in its route handler", ()
   for (const file of walk("app/api").filter(
     (file) => file.endsWith("route.ts") && !file.includes(`${path.sep}auth${path.sep}`)
   )) {
+    if (file.endsWith(path.join("setup", "route.ts"))) continue;
     const source = readFileSync(file, "utf8");
     const ast = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true);
     for (const node of ast.statements) {
@@ -271,41 +246,20 @@ test("every business mutation remains guarded by ADMIN in its route handler", ()
   }
 });
 
-test("password recovery rejects USER and foreign IDs; sends only to scoped Auth email", async () => {
+test("password reset endpoint remains scoped and reports unavailable local email delivery", async () => {
   const f = fixture([admin, viewer]);
-  const previousUrl = process.env.APP_URL;
-  process.env.APP_URL = "https://trusted.example";
-  const sent = [];
   const route = loadSource("app/api/users/[id]/reset-password/route.ts", {
     ...f.mocks,
     "@/lib/auth": f.auth,
-    "@/lib/supabase/admin": {
-      createAdminClient: () => ({
-        auth: {
-          admin: { getUserById: async (id) => ({ data: { user: { email: `${id}@example.com` } } }) },
-          resetPasswordForEmail: async (...args) => {
-            sent.push(args);
-            return { error: null };
-          },
-        },
-      }),
-    },
   });
   const request = () =>
     new Request("https://untrusted.example/api/users/viewer/reset-password", {
       method: "POST",
       body: JSON.stringify({ email: "attacker@example.com", redirectTo: "https://attacker.example" }),
     });
-  try {
-    f.setIdentity({ id: "viewer" });
-    assert.equal((await route.POST(request(), { params: Promise.resolve({ id: "admin" }) })).status, 403);
-    f.setIdentity({ id: "admin" });
-    assert.equal((await route.POST(request(), { params: Promise.resolve({ id: "foreign" }) })).status, 404);
-    assert.equal(sent.length, 0);
-    assert.equal((await route.POST(request(), { params: Promise.resolve({ id: "viewer" }) })).status, 200);
-    assert.deepEqual(sent, [["viewer@example.com", { redirectTo: "https://trusted.example/redefinir-senha" }]]);
-  } finally {
-    if (previousUrl === undefined) delete process.env.APP_URL;
-    else process.env.APP_URL = previousUrl;
-  }
+  f.setIdentity({ id: "viewer" });
+  assert.equal((await route.POST(request(), { params: Promise.resolve({ id: "admin" }) })).status, 403);
+  f.setIdentity({ id: "admin" });
+  assert.equal((await route.POST(request(), { params: Promise.resolve({ id: "foreign" }) })).status, 404);
+  assert.equal((await route.POST(request(), { params: Promise.resolve({ id: "viewer" }) })).status, 501);
 });

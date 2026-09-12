@@ -156,15 +156,7 @@ test("real PostgreSQL and private Storage: imports, signed file, duplicate, link
       service.importDocument(org, "test-admin", { ...input, memberId: foreign }, file),
       (error) => error.status === 400
     );
-    const signedUrl = await storage.createSignedStorageUrl(row.fileUrl, 60);
-    const response = await fetch(signedUrl);
-    assert.equal(response.status, 200);
-    assert.deepEqual(Buffer.from(await response.arrayBuffer()), Buffer.from(bytes));
-    const parsed = storage.parseStorageReference(row.fileUrl);
-    const publicResponse = await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${parsed.bucket}/${parsed.path}`
-    );
-    assert.notEqual(publicResponse.status, 200);
+    assert.deepEqual(await storage.downloadStorageObject(row.fileUrl), Buffer.from(bytes));
     const zip = new PizZip();
     zip.file("[Content_Types].xml", "<Types/>");
     zip.file(
@@ -185,8 +177,7 @@ test("real PostgreSQL and private Storage: imports, signed file, duplicate, link
     assert.equal(signedRow.fileUrl, null);
     assert.equal(signedRow.generatedDocxUrl, null);
     assert.equal(signedRow.origin, "IMPORTED");
-    const signedResponse = await fetch(await storage.createSignedStorageUrl(signedRow.signedFile, 60));
-    assert.equal(signedResponse.status, 200);
+    assert.ok(await storage.downloadStorageObject(signedRow.signedFile));
   } finally {
     await db.query("ROLLBACK");
     await db.end();

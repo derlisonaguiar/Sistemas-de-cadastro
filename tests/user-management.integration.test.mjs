@@ -69,7 +69,10 @@ test("PostgreSQL row lock serializes concurrent ADMIN changes and preserves last
     const { updateOrganizationUser } = loadSource("lib/user-management.ts", {
       "server-only": {},
       "@/lib/prisma": { prisma },
-      "@/lib/auth": { AuthError: class extends Error {} },
+      "@/lib/auth": {
+        AuthError: class extends Error {},
+        isAdministrativeRole: (role) => role === "ADMIN" || role === "SUPERADMIN",
+      },
     });
     const outcomes = await Promise.allSettled([
       updateOrganizationUser(first, organizationId, first, { role: "USER" }),
