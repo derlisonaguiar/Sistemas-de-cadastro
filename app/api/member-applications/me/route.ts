@@ -3,6 +3,7 @@ import { getAuthenticatedUser } from "@/lib/auth";
 import { checkRateLimit, databaseErrorResponse, parseJsonRequest } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { memberApplicationSchema } from "@/lib/validation";
+import { OrganizationContextError, resolveAutoEnrollmentOrganization } from "@/lib/organization-context";
 
 async function context() {
   const user = await getAuthenticatedUser();
@@ -29,14 +30,14 @@ export async function POST(request: Request) {
     if (existing) return NextResponse.json({ ok: false, message: "Você já possui uma inscrição." }, { status: 409 });
     const profile = await prisma.userProfile.findUnique({ where: { id: auth.user!.id }, select: { id: true } });
     if (profile) return NextResponse.json({ ok: false, message: "Esta conta já possui acesso à organização." }, { status: 409 });
-    const organizations = await prisma.organization.findMany({ select: { id: true }, take: 2, orderBy: { createdAt: "asc" } });
-    if (organizations.length !== 1) return NextResponse.json({ ok: false, message: "A autoinscrição não está disponível no momento." }, { status: 503 });
+    const organization = await resolveAutoEnrollmentOrganization();
     const data = parsed.data!;
-    const member = await prisma.member.findFirst({ where: { organizationId: organizations[0].id, cpf: data.cpf }, select: { id: true } });
+    const member = await prisma.member.findFirst({ where: { organizationId: organization.id, cpf: data.cpf }, select: { id: true } });
     if (member) return NextResponse.json({ ok: false, message: "Este CPF já está cadastrado como membro." }, { status: 409 });
-    const application = await prisma.memberApplication.create({ data: { ...data, organizationId: organizations[0].id, userId: auth.user!.id } });
+    const application = await prisma.memberApplication.create({ data: { ...data, organizationId: organization.id, userId: auth.user!.id } });
     return NextResponse.json({ ok: true, application, message: "Inscrição enviada. Aguarde a análise da administração." }, { status: 201 });
   } catch (error) {
+    if (error instanceof OrganizationContextError) return NextResponse.json({ ok: false, message: error.message }, { status: 503 });
     const code = typeof error === "object" && error && "code" in error ? String(error.code) : "";
     if (code === "P2002") return NextResponse.json({ ok: false, message: "Já existe uma inscrição ou membro com estes dados." }, { status: 409 });
     return databaseErrorResponse(error);

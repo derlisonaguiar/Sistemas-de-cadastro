@@ -4,6 +4,7 @@ import { AdminOnly } from "@/components/AccessProvider";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import type { AdminNavigationState } from "@/lib/admin-navigation";
 
 type Organization = {
   name: string;
@@ -21,11 +22,14 @@ const menuItems = [
   { label: "Projetos", href: "/admin/projetos" },
 ];
 
-export default function AdminSidebar() {
+export default function AdminSidebar({ navigation }: { navigation: AdminNavigationState }) {
+  const { showOrganizationModules } = navigation;
   const pathname = usePathname();
   const [organization, setOrganization] = useState<Organization | null>(null);
 
   useEffect(() => {
+    if (!showOrganizationModules) return;
+
     async function loadOrganization() {
       try {
         const response = await fetch("/api/organization");
@@ -40,7 +44,7 @@ export default function AdminSidebar() {
     }
 
     loadOrganization();
-  }, []);
+  }, [showOrganizationModules]);
 
   const organizationName = organization?.name ?? "Sistema de Gestão";
   const organizationShortName = organization?.shortName ?? "SG";
@@ -84,7 +88,7 @@ export default function AdminSidebar() {
 
       <nav className="admin-navigation">
         <ul className="admin-menu space-y-1">
-          {menuItems.map((item) => {
+          {menuItems.filter((item) => showOrganizationModules || item.href === "/admin").map((item) => {
             const active = isActive(item.href);
 
             return (
@@ -99,7 +103,7 @@ export default function AdminSidebar() {
               </li>
             );
           })}
-          <AdminOnly><li className="admin-nav-settings">
+          {showOrganizationModules && <AdminOnly><li className="admin-nav-settings">
             <p className="admin-nav-label">Configurações</p>
             <ul className="admin-settings-links space-y-1">
               {[
@@ -116,8 +120,8 @@ export default function AdminSidebar() {
                 </li>
               ))}
             </ul>
-          </li></AdminOnly>
-          <AdminOnly><li><Link href="/admin/inscricoes" aria-current={pathname === "/admin/inscricoes" ? "page" : undefined} className="admin-nav-link">Inscrições</Link></li></AdminOnly>
+          </li></AdminOnly>}
+          {showOrganizationModules && <AdminOnly><li><Link href="/admin/inscricoes" aria-current={pathname === "/admin/inscricoes" ? "page" : undefined} className="admin-nav-link">Inscrições</Link></li></AdminOnly>}
         </ul>
       </nav>
     </aside>

@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     try {
       const profile = await withOrganizationAdmin(context.auth!.user.id, context.auth!.profile.organizationId,
         async tx => {
-          const user = await tx.authUser.create({ data: { email, name, passwordHash: await hashPassword(password) } });
+          const user = await tx.authUser.create({ data: { email, name, passwordHash: await hashPassword(password), role } });
           return tx.userProfile.create({ data: { id: user.id, organizationId: context.auth!.profile.organizationId, name, email, role } });
         });
       return NextResponse.json({ ok: true, user: profile }, { status: 201 });

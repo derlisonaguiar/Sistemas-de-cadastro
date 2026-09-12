@@ -81,6 +81,19 @@ export const memberApplicationSchema = z.object({
   cep: optionalText(12), city: optionalText(120), state: optionalText(120),
 }).strict();
 
+export const initialSetupOrganizationSchema = organizationSchema.extend({
+  name: z.string().trim().min(1).max(160),
+});
+export const initialSetupSchema = initialSetupOrganizationSchema.extend({
+  adminName: requiredText(200),
+  adminUsername: z.string().trim().toLowerCase().min(3).max(64).regex(/^[a-z0-9._-]+$/, "Use letras, números, ponto, hífen ou sublinhado."),
+  adminEmail: z.string().trim().toLowerCase().email().max(254),
+  adminEmailConfirmation: z.string().trim().toLowerCase().email().max(254),
+  adminPassword: z.string().min(8).max(128).regex(/[A-Z]/, "A senha deve conter letra maiúscula.").regex(/[a-z]/, "A senha deve conter letra minúscula.").regex(/[0-9]/, "A senha deve conter número.").regex(/[^A-Za-z0-9]/, "A senha deve conter caractere especial."),
+  adminPasswordConfirmation: z.string().min(8).max(128),
+}).refine((data) => data.adminEmail === data.adminEmailConfirmation, { message: "Os e-mails não coincidem.", path: ["adminEmailConfirmation"] })
+  .refine((data) => data.adminPassword === data.adminPasswordConfirmation, { message: "As senhas não coincidem.", path: ["adminPasswordConfirmation"] });
+
 export const memberApplicationReviewSchema = memberApplicationSchema.extend({
   directorateId: optionalIdSchema,
   positionId: optionalIdSchema,
@@ -93,8 +106,24 @@ export const memberApplicationDecisionSchema = z.object({
 
 export const signupSchema = z.object({
   name: requiredText(200),
+  username: z.string().trim().toLowerCase().min(3).max(64)
+    .regex(/^[a-z0-9._-]+$/, "Use letras, números, ponto, hífen ou sublinhado."),
   email: z.string().trim().toLowerCase().email().max(254),
+  emailConfirmation: z.string().trim().toLowerCase().email().max(254),
   password: z.string().min(8).max(256),
+  passwordConfirmation: z.string().min(8).max(256),
+  entryCode: z.string().trim().toUpperCase().length(6, "O código de ingresso deve ter 6 caracteres."),
+}).strict()
+  .refine((data) => data.email === data.emailConfirmation, {
+    message: "Os e-mails não coincidem.",
+    path: ["emailConfirmation"],
+  })
+  .refine((data) => data.password === data.passwordConfirmation, {
+    message: "As senhas não coincidem.",
+    path: ["passwordConfirmation"],
+  });
+export const organizationEntryCodeSchema = z.object({
+  entryCode: z.string().trim().toUpperCase().length(6, "O código de ingresso deve ter 6 caracteres."),
 }).strict();
 
 export const directorateSchema = z.object({
@@ -170,8 +199,9 @@ export const invitationSchema = z.object({
 export const linkInvitationSchema = z.object({ token: z.string().trim().min(32).max(256) }).strict();
 export const createLocalOrganizationSchema = z.object({ mode: z.literal("create"), organizationName: requiredText(160) }).strict();
 export const loginSchema = z.object({
-  email: z.string().trim().toLowerCase().email().max(254),
+  identifier: z.string().trim().toLowerCase().min(3).max(254),
   password: z.string().min(6).max(256),
+  next: z.literal("/inscricao").optional(),
 }).strict();
 
 export const routeIdSchema = z.object({ id: idSchema }).strict();

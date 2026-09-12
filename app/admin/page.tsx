@@ -1,9 +1,14 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { requireAuthenticatedProfile } from "@/lib/auth";
+import { isAdministrativeRole, requireAdministrativeAccess } from "@/lib/auth";
+import { getDeploymentMode } from "@/lib/deployment-mode";
 
 export default async function AdminPage() {
-  const { organization, profile } = await requireAuthenticatedProfile();
+  const auth = await requireAdministrativeAccess();
+  const isSuperadmin = getDeploymentMode() === "multi" && auth.user.role === "SUPERADMIN";
+  if (isSuperadmin && !auth.organization) return <div><h1 className="text-2xl font-semibold text-gray-900">Painel da plataforma</h1><p className="mt-2 text-sm text-gray-600">Você está conectado como SUPERADMIN global. As áreas vinculadas a uma organização permanecem indisponíveis até que exista um contexto organizacional.</p></div>;
+  const { organization } = auth;
+  if (!organization) return null;
 
   const [
     activeMembers,
@@ -243,7 +248,7 @@ export default async function AdminPage() {
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {quickActions.filter(action => profile.role === "ADMIN" || action.href === "/admin/contratos").map((action) => (
+          {quickActions.filter(() => isAdministrativeRole(auth.user.role) || isAdministrativeRole(auth.profile?.role)).map((action) => (
             <Link
               key={action.title}
               href={action.href}

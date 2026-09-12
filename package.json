@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:security": "node --experimental-strip-types --test tests/file-security.test.ts tests/certificate-layout.test.ts"
+    "test:security": "node --experimental-strip-types --test tests/file-security.test.ts tests/certificate-layout.test.ts",
+    "create:superadmin": "node --experimental-strip-types scripts/create-superadmin.ts",
+    "setup:fresh": "node scripts/setup-fresh.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.1",

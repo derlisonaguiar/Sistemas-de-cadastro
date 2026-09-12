@@ -1,6 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { AuthError } from "@/lib/auth";
+import { AuthError, isAdministrativeRole } from "@/lib/auth";
 import type { Prisma } from "@/lib/generated/prisma/client";
 import { z } from "zod";
 
@@ -26,7 +26,7 @@ export async function withOrganizationAdmin<T>(actorId: string, organizationId: 
   return prisma.$transaction(async tx => {
     await tx.$queryRaw`SELECT "id" FROM "Organization" WHERE "id" = ${organizationId} FOR UPDATE`;
     const actor = await tx.userProfile.findUnique({ where: { id: actorId } });
-    if (!actor?.active || actor.role !== "ADMIN" || actor.organizationId !== organizationId) {
+    if (!actor?.active || !isAdministrativeRole(actor.role) || actor.organizationId !== organizationId) {
       throw new AuthError("FORBIDDEN");
     }
     return action(tx);

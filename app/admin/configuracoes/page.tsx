@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { applyAdminTheme } from "@/lib/admin-theme";
+import OrganizationEntryCode from "@/components/OrganizationEntryCode";
+import OrganizationFaviconSettings from "@/components/OrganizationFaviconSettings";
 
 type Organization = {
   id: string;
@@ -388,6 +390,8 @@ export default function ConfiguracoesPage() {
       </div>
 
       <div className="space-y-6">
+        <OrganizationEntryCode />
+        <OrganizationFaviconSettings />
         <section className="rounded-lg border border-gray-200 bg-white">
           <div className="border-b border-gray-200 px-5 py-4">
             <h2 className="font-semibold text-gray-900">

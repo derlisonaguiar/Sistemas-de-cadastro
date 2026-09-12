@@ -30,6 +30,7 @@ Configure no .env local e no gerenciador de secrets da hospedagem. Nomes, sem va
 - MAX_TEMPLATE_UPLOAD_BYTES
 - CERTIFICATE_IMAGE_MAX_BYTES
 - PYTHON_EXECUTABLE
+- DEPLOYMENT_MODE (`single` ou `multi`; padrão seguro: `single`)
 
 DIRECT_DATABASE_URL existe no ambiente atual, mas não é consumida pelo prisma.config.ts. DATABASE_URL deve permitir conexão e migrations. Nunca exponha service_role no navegador.
 

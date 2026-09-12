@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 export const SESSION_COOKIE = "local_session";
 const SESSION_DAYS = 14;
 
-export type LocalIdentity = { id: string; email: string; user_metadata: { name?: string; self_enrollment?: boolean } };
+export type LocalIdentity = { id: string; email: string; role: "ADMIN" | "USER" | "SUPERADMIN"; user_metadata: { name?: string; self_enrollment?: boolean } };
 const hashToken = (token: string) => createHash("sha256").update(token).digest("hex");
 
 const scrypt = promisify(nodeScrypt);
@@ -19,7 +19,7 @@ export async function getSessionIdentity(): Promise<LocalIdentity | null> {
   if (!token) return null;
   const session = await prisma.authSession.findUnique({ where: { tokenHash: hashToken(token) }, include: { user: true } });
   if (!session || session.expiresAt <= new Date() || !session.user.active) return null;
-  return { id: session.user.id, email: session.user.email, user_metadata: { name: session.user.name || undefined, self_enrollment: session.user.selfEnrollment } };
+  return { id: session.user.id, email: session.user.email, role: session.user.role, user_metadata: { name: session.user.name || undefined, self_enrollment: session.user.selfEnrollment } };
 }
 
 export async function createSession(userId: string) {

@@ -4,6 +4,7 @@ import { getAuthenticatedUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/api";
 import { createLocalOrganizationSchema, linkInvitationSchema } from "@/lib/validation";
+import { getDeploymentMode } from "@/lib/deployment-mode";
 
 function hashToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
@@ -43,6 +44,9 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => null);
     const createOrganization = createLocalOrganizationSchema.safeParse(body);
     if (createOrganization.success) {
+      if (getDeploymentMode() === "single") {
+        return NextResponse.json({ ok: false, message: "Use o setup inicial para criar a organização desta instalação." }, { status: 403 });
+      }
       if (user.user_metadata?.self_enrollment === true) {
         return NextResponse.json({ ok: false, message: "Esta conta deve concluir a inscrição de membro." }, { status: 403 });
       }

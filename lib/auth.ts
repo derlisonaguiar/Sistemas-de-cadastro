@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionIdentity } from "@/lib/local-auth";
+import { OrganizationContextError, resolveSessionOrganization } from "@/lib/organization-context";
 
 export type AuthFailure = "UNAUTHORIZED" | "PROFILE_REQUIRED" | "FORBIDDEN";
 
@@ -15,16 +16,21 @@ export async function getAuthenticatedUser() {
   return getSessionIdentity();
 }
 
+export function isAdministrativeRole(role: string | null | undefined) {
+  return role === "ADMIN" || role === "SUPERADMIN";
+}
+
 export async function getAuthenticatedProfile() {
   const user = await getAuthenticatedUser();
   if (!user) return null;
 
   const profile = await prisma.userProfile.findUnique({
     where: { id: user.id },
-    include: { organization: true },
   });
 
-  return profile?.active ? { user, profile, organization: profile.organization } : null;
+  if (!profile?.active) return null;
+  const organization = await resolveSessionOrganization(profile.organizationId);
+  return { user, profile, organization };
 }
 
 export async function requireAuthenticatedProfile() {
@@ -33,21 +39,32 @@ export async function requireAuthenticatedProfile() {
 
   const profile = await prisma.userProfile.findUnique({
     where: { id: user.id },
-    include: { organization: true },
   });
 
   if (!profile) throw new AuthError("PROFILE_REQUIRED");
   if (!profile.active) throw new AuthError("FORBIDDEN");
-  return { user, profile, organization: profile.organization };
+  const organization = await resolveSessionOrganization(profile.organizationId);
+  return { user, profile, organization };
 }
 
 export async function requireAdminProfile() {
   const result = await requireAuthenticatedProfile();
-  if (result.profile.role !== "ADMIN") throw new AuthError("FORBIDDEN");
+  if (!isAdministrativeRole(result.user.role) && !isAdministrativeRole(result.profile.role)) throw new AuthError("FORBIDDEN");
   return result;
 }
 
+/** Authorizes access to the administrative UI, including global SUPERADMINs without an organization profile. */
+export async function requireAdministrativeAccess() {
+  const user = await getAuthenticatedUser();
+  if (!user) throw new AuthError("UNAUTHORIZED");
+  if (user.role === "SUPERADMIN") return { user, profile: null, organization: null };
+  return requireAdminProfile();
+}
+
 export function authErrorResponse(error: unknown) {
+  if (error instanceof OrganizationContextError) {
+    return NextResponse.json({ ok: false, message: error.message }, { status: 503 });
+  }
   if (!(error instanceof AuthError)) return null;
 
   if (error.code === "UNAUTHORIZED") {

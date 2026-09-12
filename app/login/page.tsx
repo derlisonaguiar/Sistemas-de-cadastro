@@ -3,14 +3,17 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useEffect } from "react";
 
 export default function LoginPage() {
   const router = useRouter();
 
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [showCreateOrganization, setShowCreateOrganization] = useState(false);
+  useEffect(() => { fetch("/api/setup/status").then(async response => { const data = await response.json(); if (response.ok) setShowCreateOrganization(data.showCreateOrganization === true); }).catch(() => undefined); }, []);
 
   async function handleSubmit(
     event: React.FormEvent
@@ -21,12 +24,14 @@ export default function LoginPage() {
       setLoading(true);
       setMessage("");
 
+      const next = new URLSearchParams(window.location.search).get("next");
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: email.trim(),
+          identifier: identifier.trim(),
           password,
+          next: next === "/inscricao" ? next : undefined,
         }),
       });
 
@@ -38,8 +43,8 @@ export default function LoginPage() {
         return;
       }
 
-      const next = new URLSearchParams(window.location.search).get("next");
-      router.push(next === "/inscricao" ? "/inscricao" : "/admin");
+      const data = await response.json();
+      router.push(data.destination);
       router.refresh();
     } catch (error) {
       console.error(
@@ -74,19 +79,19 @@ export default function LoginPage() {
         >
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">
-              E-mail
+              E-mail ou usuário
             </label>
 
             <input
-              type="email"
-              value={email}
+              type="text"
+              value={identifier}
               onChange={(event) =>
-                setEmail(
+                setIdentifier(
                   event.target.value
                 )
               }
               required
-              autoComplete="email"
+              autoComplete="username"
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
             />
           </div>
@@ -127,6 +132,7 @@ export default function LoginPage() {
           </button>
         </form>
         <p className="mt-4 text-center text-sm text-gray-600">Quer se inscrever? <Link href="/cadastro" className="font-medium text-purple-700">Criar conta</Link></p>
+        {showCreateOrganization && <p className="mt-2 text-center text-sm text-gray-600"><Link href="/setup" className="font-medium text-purple-700">Criar organização</Link></p>}
       </div>
     </main>
   );
