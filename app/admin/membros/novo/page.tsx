@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import FileUploadField from "@/components/FileUploadField";
 
 type Directorate = {
   id: string;
@@ -319,8 +320,7 @@ export default function NovoMembroPage() {
             <div className="grid gap-4 p-5 md:grid-cols-2">
               <div className="md:col-span-2">
                 <label className="mb-1 block text-sm font-medium text-gray-700">Foto de perfil (opcional)</label>
-                <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setPhoto(event.target.files?.[0] || null)} className="block w-full text-sm" />
-                <p className="mt-1 text-xs text-gray-500">JPG, PNG ou WebP, até 2 MB.</p>
+                <FileUploadField action="Selecionar foto" hint="JPG, PNG ou WebP, até 2 MB" accept="image/jpeg,image/png,image/webp" onChange={(event) => setPhoto(event.target.files?.[0] || null)} />
               </div>
             <div className="md:col-span-2">
               <label className="mb-1 block text-sm font-medium text-gray-700">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import FileUploadField from "@/components/FileUploadField";
 
 type PreviewRow = { line: number; fullName: string; valid: boolean; errors: string[]; warnings: string[] };
 type Preview = { total: number; valid: number; invalid: number; rows: PreviewRow[] };
@@ -37,7 +38,7 @@ export default function MemberImportDialog({ onClose, onImported }: { onClose: (
     <div className="space-y-5">
       <div><h2 id="member-import-title" className="text-lg font-semibold">Importar membros</h2><p className="mt-1 text-sm text-gray-600">Baixe o modelo, preencha os dados e valide antes de confirmar.</p></div>
       <div className="flex flex-wrap gap-2"><a href="/api/members/import/template?format=csv" className="rounded-md border px-3 py-2 text-sm">Baixar modelo CSV</a><a href="/api/members/import/template?format=xlsx" className="rounded-md border px-3 py-2 text-sm">Baixar modelo XLSX</a></div>
-      <label className="block text-sm font-medium">Planilha CSV ou XLSX<input type="file" accept=".csv,.xlsx" disabled={busy} onChange={(event) => { setFile(event.target.files?.[0] || null); setPreview(null); setResult(null); setError(""); }} className="mt-1 block w-full text-sm font-normal" /></label>
+      <div><p className="mb-1 text-sm font-medium">Planilha CSV ou XLSX</p><FileUploadField action="Selecionar planilha" hint="CSV ou XLSX" accept=".csv,.xlsx" disabled={busy} onChange={(event) => { setFile(event.target.files?.[0] || null); setPreview(null); setResult(null); setError(""); }} /></div>
       {preview && <div className="rounded-md border p-4 text-sm"><p><strong>{preview.total}</strong> linhas: <strong className="text-green-700">{preview.valid} válidas</strong> e <strong className="text-red-700">{preview.invalid} inválidas</strong>.</p><div className="mt-3 max-h-48 overflow-y-auto space-y-2">{preview.rows.map((row) => <div key={row.line}><span className="font-medium">Linha {row.line}: {row.fullName || "Sem nome"}</span>{row.errors.length > 0 && <span className="text-red-700"> — {row.errors.join("; ")}</span>}{row.warnings.length > 0 && <span className="text-amber-700"> — {row.warnings.join("; ")}</span>}</div>)}</div></div>}
       {result && <div className="rounded-md border p-4 text-sm"><p><strong>{result.imported}</strong> membro(s) importado(s).</p>{result.failures.length > 0 && <div className="mt-2 text-red-700">{result.failures.map((failure) => <p key={failure.line}>Linha {failure.line}: {failure.error}</p>)}</div>}</div>}
       {error && <p role="alert" className="text-sm text-red-700">{error}</p>}

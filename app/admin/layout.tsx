@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import AdminSidebar from "@/components/AdminSidebar";
 import AdminHeader from "@/components/AdminHeader";
 import { redirect } from "next/navigation";
-import { AuthError, isAdministrativeRole, requireAdministrativeAccess } from "@/lib/auth";
+import { AuthError, getAuthenticatedUser, isAdministrativeRole, requireAdministrativeAccess } from "@/lib/auth";
 import { adminThemeStyle } from "@/lib/admin-theme";
 import OrganizationScope from "@/components/OrganizationScope";
 import { getDeploymentMode } from "@/lib/deployment-mode";
@@ -34,7 +34,11 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
   } catch (error) {
     if (error instanceof AuthError) {
       if (error.code === "UNAUTHORIZED") redirect("/login");
-      if (error.code === "PROFILE_REQUIRED") redirect("/vincular");
+      if (error.code === "PROFILE_REQUIRED") {
+        const user = await getAuthenticatedUser();
+        if (user?.user_metadata.self_enrollment) redirect("/inscricao");
+        redirect("/vincular");
+      }
       redirect("/acesso-negado");
     }
     throw error;

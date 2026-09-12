@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import FileUploadField from "@/components/FileUploadField";
 
 export default function NovoDocumentoPage() {
   const router = useRouter();
@@ -152,22 +153,7 @@ export default function NovoDocumentoPage() {
               Modelo DOCX *
             </label>
 
-            <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 px-6 py-10 text-center transition hover:border-[var(--admin-accent-border)] hover:bg-[var(--admin-soft)]">
-              <span className="text-sm font-medium text-gray-800">
-                Clique para selecionar o arquivo
-              </span>
-
-              <span className="mt-1 text-xs text-gray-500">
-                DOCX de até 10 MB
-              </span>
-
-              <input
-                type="file"
-                accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-            </label>
+            <FileUploadField action="Selecionar modelo DOCX" hint="Clique para selecionar um arquivo de até 10 MB" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={handleFileChange} />
 
             {file && (
               <div className="mt-4 rounded-md border border-green-200 bg-green-50 px-4 py-3">

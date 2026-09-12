@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { AdminNavigationState } from "@/lib/admin-navigation";
+import { BadgeCheck, Building2, DatabaseBackup, FileSignature, FileText, FolderKanban, LayoutDashboard, Network, UserPlus, Users, BriefcaseBusiness } from "lucide-react";
 
 type Organization = {
   name: string;
@@ -14,12 +15,12 @@ type Organization = {
 };
 
 const menuItems = [
-  { label: "Dashboard", href: "/admin" },
-  { label: "Membros", href: "/admin/membros" },
-  { label: "Clientes", href: "/admin/clientes" },
-  { label: "Contratos", href: "/admin/contratos" },
-  { label: "Documentos", href: "/admin/documentos" },
-  { label: "Projetos", href: "/admin/projetos" },
+  { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
+  { label: "Membros", href: "/admin/membros", icon: Users },
+  { label: "Clientes", href: "/admin/clientes", icon: BriefcaseBusiness },
+  { label: "Contratos", href: "/admin/contratos", icon: FileSignature },
+  { label: "Documentos", href: "/admin/documentos", icon: FileText },
+  { label: "Projetos", href: "/admin/projetos", icon: FolderKanban },
 ];
 
 export default function AdminSidebar({ navigation }: { navigation: AdminNavigationState }) {
@@ -98,7 +99,8 @@ export default function AdminSidebar({ navigation }: { navigation: AdminNavigati
                   className="admin-nav-link"
                   aria-current={active ? "page" : undefined}
                 >
-                  {item.label}
+                  <item.icon aria-hidden="true" size={17} strokeWidth={1.8} />
+                  <span>{item.label}</span>
                 </Link>
               </li>
             );
@@ -107,21 +109,22 @@ export default function AdminSidebar({ navigation }: { navigation: AdminNavigati
             <p className="admin-nav-label">Configurações</p>
             <ul className="admin-settings-links space-y-1">
               {[
-                { label: "Organização", href: "/admin/configuracoes" },
-                { label: "Diretorias", href: "/admin/configuracoes/diretorias" },
-                { label: "Cargos", href: "/admin/configuracoes/cargos" },
-                { label: "Backup", href: "/admin/configuracoes/backup" },
+                { label: "Organização", href: "/admin/configuracoes", icon: Building2 },
+                { label: "Diretorias", href: "/admin/configuracoes/diretorias", icon: Network },
+                { label: "Cargos", href: "/admin/configuracoes/cargos", icon: BadgeCheck },
+                { label: "Backup", href: "/admin/configuracoes/backup", icon: DatabaseBackup },
               ].map((item) => (
                 <li key={item.href}>
                   <Link href={item.href} aria-current={pathname === item.href ? "page" : undefined}
                     className="admin-nav-link">
-                    {item.label}
+                    <item.icon aria-hidden="true" size={16} strokeWidth={1.8} />
+                    <span>{item.label}</span>
                   </Link>
                 </li>
               ))}
             </ul>
           </li></AdminOnly>}
-          {showOrganizationModules && <AdminOnly><li><Link href="/admin/inscricoes" aria-current={pathname === "/admin/inscricoes" ? "page" : undefined} className="admin-nav-link">Inscrições</Link></li></AdminOnly>}
+          {showOrganizationModules && <AdminOnly><li><Link href="/admin/inscricoes" aria-current={pathname === "/admin/inscricoes" ? "page" : undefined} className="admin-nav-link"><UserPlus aria-hidden="true" size={17} strokeWidth={1.8} /><span>Inscrições</span></Link></li></AdminOnly>}
         </ul>
       </nav>
     </aside>

@@ -2,6 +2,8 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { isAdministrativeRole, requireAdministrativeAccess } from "@/lib/auth";
 import { getDeploymentMode } from "@/lib/deployment-mode";
+import DashboardNotifications from "@/components/DashboardNotifications";
+import { BriefcaseBusiness, Building2, FilePlus2, FileSignature, FileText, FolderKanban, Settings, UserPlus, Users } from "lucide-react";
 
 export default async function AdminPage() {
   const auth = await requireAdministrativeAccess();
@@ -122,28 +124,28 @@ export default async function AdminPage() {
       value: activeMembers,
       description: "Na organização atualmente",
       href: "/admin/membros",
-      symbol: "M",
+      icon: Users,
     },
     {
       label: "Projetos ativos",
       value: activeProjects,
       description: "Projetos em andamento",
       href: "/admin/projetos",
-      symbol: "P",
+      icon: FolderKanban,
     },
     {
       label: "Clientes",
       value: clients,
       description: "Clientes cadastrados",
       href: "/admin/clientes",
-      symbol: "C",
+      icon: BriefcaseBusiness,
     },
     {
       label: "Documentos emitidos",
       value: issuedDocuments,
       description: "Documentos registrados",
       href: "/admin/documentos",
-      symbol: "D",
+      icon: FileText,
     },
   ];
 
@@ -152,59 +154,56 @@ export default async function AdminPage() {
       title: "Novo membro",
       description: "Cadastrar uma nova pessoa na organização",
       href: "/admin/membros/novo",
-      symbol: "+",
+      icon: UserPlus,
     },
     {
       title: "Gerar documento",
       description: "Emitir termo, declaração ou certificado",
       href: "/admin/documentos/gerar",
-      symbol: "D",
+      icon: FilePlus2,
     },
     {
       title: "Novo cliente",
       description: "Cadastrar um novo cliente",
       href: "/admin/clientes/novo",
-      symbol: "C",
+      icon: Building2,
     },
     {
       title: "Novo projeto",
       description: "Criar um novo projeto",
       href: "/admin/projetos/novo",
-      symbol: "P",
+      icon: FolderKanban,
     },
     {
       title: "Contratos",
       description: "Acessar a gestão de contratos",
       href: "/admin/contratos",
-      symbol: "CT",
+      icon: FileSignature,
     },
     {
       title: "Configurações",
       description: "Dados e identidade da organização",
       href: "/admin/configuracoes",
-      symbol: "⚙",
+      icon: Settings,
     },
   ];
 
-  const totalPendencies =
-    membersWithoutDirectorate +
-    membersWithoutPosition +
-    inactiveTemplates;
+  const notifications = [
+    { title: "Membros sem diretoria", description: "Membros ativos sem diretoria vinculada.", href: "/admin/membros", count: membersWithoutDirectorate },
+    { title: "Membros sem cargo", description: "Membros ativos sem cargo definido.", href: "/admin/membros", count: membersWithoutPosition },
+    { title: "Modelos inativos", description: "Templates de documentos atualmente desativados.", href: "/admin/documentos", count: inactiveTemplates },
+  ];
 
   return (
-    <div className="admin-dashboard space-y-7">
-      <section className="relative overflow-hidden rounded-2xl border bg-white px-5 py-6 shadow-sm sm:px-7">
-        <div className="absolute inset-y-0 left-0 w-1 bg-[var(--admin-primary)]" />
-        <div className="relative flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+    <div className="admin-dashboard space-y-6">
+      <section className="rounded-xl border bg-white px-5 py-4 shadow-sm sm:px-6">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--admin-ink)]">Visão geral</p>
-            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">Olá{auth.user.user_metadata.name ? `, ${auth.user.user_metadata.name.split(" ")[0]}` : ""}.</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500">Acompanhe os principais indicadores e acesse as rotinas administrativas de {organization.name}.</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--admin-ink)]">Painel administrativo</p>
+            <h1 className="mt-1 text-xl font-semibold tracking-tight text-gray-900 sm:text-2xl">Olá{auth.user.user_metadata.name ? `, ${auth.user.user_metadata.name.split(" ")[0]}` : ""}.</h1>
+            <p className="mt-1 text-sm text-gray-500">Visão geral de {organization.name}.</p>
           </div>
-          <div className="rounded-xl border border-[var(--admin-accent-border)] bg-[var(--admin-soft)] px-4 py-3 text-sm">
-            <p className="text-xs font-medium text-gray-500">Organização ativa</p>
-            <p className="mt-1 font-semibold text-[var(--admin-ink)]">{organization.name}</p>
-          </div>
+          <div className="flex items-center gap-2"><DashboardNotifications notifications={notifications} /><div className="rounded-lg bg-[var(--admin-soft)] px-3 py-2 text-sm"><p className="text-[11px] font-medium text-gray-500">Organização ativa</p><p className="mt-0.5 font-semibold text-[var(--admin-ink)]">{organization.name}</p></div></div>
         </div>
       </section>
 
@@ -218,7 +217,7 @@ export default async function AdminPage() {
           <Link
             key={indicator.label}
             href={indicator.href}
-            className="admin-metric admin-card-link group rounded-xl border bg-white p-5"
+            className="admin-metric admin-card-link group rounded-xl border bg-white p-4"
           >
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -226,17 +225,17 @@ export default async function AdminPage() {
                   {indicator.label}
                 </p>
 
-                <p className="mt-3 text-3xl font-semibold tracking-tight tabular-nums text-gray-900 sm:text-4xl">
+                <p className="mt-2 text-4xl font-semibold tracking-tight tabular-nums text-gray-900">
                   {indicator.value}
                 </p>
               </div>
 
-              <div className="admin-symbol flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xs font-bold shadow-sm">
-                {indicator.symbol}
+              <div className="admin-symbol flex h-9 w-9 shrink-0 items-center justify-center rounded-lg">
+                <indicator.icon aria-hidden="true" size={18} strokeWidth={1.8} />
               </div>
             </div>
 
-            <div className="mt-4 flex items-center justify-between gap-2 border-t border-gray-100 pt-3"><p className="text-xs text-gray-500">{indicator.description}</p><span className="admin-card-arrow text-sm" aria-hidden="true">→</span></div>
+            <div className="mt-3 flex items-center justify-between gap-2"><p className="text-xs text-gray-500">{indicator.description}</p><span className="admin-card-arrow text-sm" aria-hidden="true">→</span></div>
           </Link>
         ))}
       </div>
@@ -259,10 +258,10 @@ export default async function AdminPage() {
             <Link
               key={action.title}
               href={action.href}
-              className="admin-card-link group flex items-center gap-4 rounded-xl border bg-white p-4"
+              className="admin-card-link group flex items-center gap-3 rounded-lg border bg-white px-4 py-3"
             >
-              <div className="admin-symbol flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xs font-bold shadow-sm">
-                {action.symbol}
+              <div className="admin-symbol flex h-8 w-8 shrink-0 items-center justify-center rounded-lg">
+                <action.icon aria-hidden="true" size={16} strokeWidth={1.8} />
               </div>
 
               <div className="min-w-0">
@@ -270,7 +269,7 @@ export default async function AdminPage() {
                   {action.title}
                 </p>
 
-                <p className="mt-1 text-xs leading-5 text-gray-500">
+                <p className="mt-0.5 text-xs leading-4 text-gray-500">
                   {action.description}
                 </p>
               </div>
@@ -283,11 +282,8 @@ export default async function AdminPage() {
         </div>
       </section>
 
-      {/* Estrutura + Pendências */}
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-        {/* Estrutura */}
-        <section className="admin-dashboard-panel overflow-hidden rounded-xl border bg-white">
-          <div className="border-b border-gray-100 px-5 py-4">
+      <section className="admin-dashboard-panel rounded-xl border bg-white p-5">
+          <div>
             <h2 className="text-base font-semibold text-gray-900">
               Estrutura da organização
             </h2>
@@ -297,8 +293,8 @@ export default async function AdminPage() {
             </p>
           </div>
 
-          <div className="divide-y divide-gray-100 px-5">
-            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-4">
+          <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
+            <div>
               <span className="text-sm text-gray-500">
                 Presidente
               </span>
@@ -306,18 +302,18 @@ export default async function AdminPage() {
               {president ? (
                 <Link
                   href={`/admin/membros/${president.id}`}
-                  className="text-sm font-medium text-gray-900 hover:text-[var(--admin-ink)]"
+                  className="mt-1 block text-sm font-medium text-gray-900 hover:text-[var(--admin-ink)]"
                 >
                   {president.fullName}
                 </Link>
               ) : (
-                <span className="text-sm font-medium text-amber-600">
+                <span className="mt-1 inline-block rounded-full bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700">
                   Não definido
                 </span>
               )}
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-4">
+            <div>
               <span className="text-sm text-gray-500">
                 Vice-Presidente
               </span>
@@ -325,165 +321,48 @@ export default async function AdminPage() {
               {vicePresident ? (
                 <Link
                   href={`/admin/membros/${vicePresident.id}`}
-                  className="text-sm font-medium text-gray-900 hover:text-[var(--admin-ink)]"
+                  className="mt-1 block text-sm font-medium text-gray-900 hover:text-[var(--admin-ink)]"
                 >
                   {vicePresident.fullName}
                 </Link>
               ) : (
-                <span className="text-sm font-medium text-amber-600">
+                <span className="mt-1 inline-block rounded-full bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700">
                   Não definido
                 </span>
               )}
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-4">
+            <div>
               <span className="text-sm text-gray-500">
                 Diretorias cadastradas
               </span>
 
-              <span className="text-sm font-semibold text-gray-900">
+              <span className="mt-1 block text-sm font-semibold text-gray-900">
                 {directorates}
               </span>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-4">
+            <div>
               <span className="text-sm text-gray-500">
                 Cargos cadastrados
               </span>
 
-              <span className="text-sm font-semibold text-gray-900">
+              <span className="mt-1 block text-sm font-semibold text-gray-900">
                 {positions}
               </span>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-4">
+            <div>
               <span className="text-sm text-gray-500">
                 Total de membros ativos
               </span>
 
-              <span className="text-sm font-semibold text-gray-900">
+              <span className="mt-1 block text-sm font-semibold text-gray-900">
                 {activeMembers}
               </span>
             </div>
           </div>
-        </section>
-
-        {/* Pendências */}
-        <section className="admin-dashboard-panel overflow-hidden rounded-xl border bg-white">
-          <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
-            <div>
-              <h2 className="text-base font-semibold text-gray-900">
-                Pendências
-              </h2>
-
-              <p className="mt-1 text-xs text-gray-500">
-                Pontos que podem precisar de atenção.
-              </p>
-            </div>
-
-            <div
-              className={`flex h-9 min-w-9 items-center justify-center rounded-full px-2 text-sm font-semibold ${
-                totalPendencies === 0
-                  ? "bg-green-50 text-green-700"
-                  : "bg-amber-50 text-amber-700"
-              }`}
-            >
-              {totalPendencies}
-            </div>
-          </div>
-
-          <div className="divide-y divide-gray-100 px-5">
-            <Link
-              href="/admin/membros"
-              className="flex items-center justify-between gap-4 py-4"
-            >
-              <div>
-                <p className="text-sm font-medium text-gray-800">
-                  Membros sem diretoria
-                </p>
-
-                <p className="mt-1 text-xs text-gray-500">
-                  Membros ativos sem diretoria vinculada.
-                </p>
-              </div>
-
-              <StatusNumber
-                value={membersWithoutDirectorate}
-              />
-            </Link>
-
-            <Link
-              href="/admin/membros"
-              className="flex items-center justify-between gap-4 py-4"
-            >
-              <div>
-                <p className="text-sm font-medium text-gray-800">
-                  Membros sem cargo
-                </p>
-
-                <p className="mt-1 text-xs text-gray-500">
-                  Membros ativos sem cargo definido.
-                </p>
-              </div>
-
-              <StatusNumber
-                value={membersWithoutPosition}
-              />
-            </Link>
-
-            <Link
-              href="/admin/documentos"
-              className="flex items-center justify-between gap-4 py-4"
-            >
-              <div>
-                <p className="text-sm font-medium text-gray-800">
-                  Modelos inativos
-                </p>
-
-                <p className="mt-1 text-xs text-gray-500">
-                  Templates de documentos atualmente desativados.
-                </p>
-              </div>
-
-              <StatusNumber
-                value={inactiveTemplates}
-              />
-            </Link>
-          </div>
-
-          {totalPendencies === 0 && (
-            <div className="border-t border-gray-100 bg-green-50/60 px-5 py-4">
-              <p className="text-sm font-medium text-green-700">
-                Tudo certo por aqui.
-              </p>
-
-              <p className="mt-1 text-xs text-green-600">
-                Nenhuma pendência administrativa encontrada.
-              </p>
-            </div>
-          )}
-        </section>
-      </div>
+      </section>
     </div>
-  );
-}
-
-function StatusNumber({
-  value,
-}: {
-  value: number;
-}) {
-  if (value === 0) {
-    return (
-      <span className="shrink-0 rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">
-        OK
-      </span>
-    );
-  }
-
-  return (
-    <span className="shrink-0 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
-      {value}
-    </span>
   );
 }

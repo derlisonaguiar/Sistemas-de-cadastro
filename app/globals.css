@@ -51,3 +51,17 @@ select option {
 button {
   color: inherit;
 }
+
+@keyframes upload-feedback-in {
+  from { opacity: 0; transform: translateY(-2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.upload-feedback {
+  animation: upload-feedback-in 160ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .file-upload-field { transition: none; }
+  .upload-feedback { animation: none; }
+}

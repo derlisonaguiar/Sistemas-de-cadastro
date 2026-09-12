@@ -5,6 +5,7 @@ import Link from "next/link";
 import { applyAdminTheme } from "@/lib/admin-theme";
 import OrganizationEntryCode from "@/components/OrganizationEntryCode";
 import OrganizationFaviconSettings from "@/components/OrganizationFaviconSettings";
+import FileUploadField from "@/components/FileUploadField";
 
 type Organization = {
   id: string;
@@ -427,16 +428,12 @@ export default function ConfiguracoesPage() {
                 </div>
 
                 <div>
-                  <input
-                    type="file"
+                  <FileUploadField
+                    action={uploadingLogo ? "Enviando logo..." : "Selecionar logo"}
+                    hint="Clique para selecionar uma imagem"
                     accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                    onChange={
-                      handleLogoUpload
-                    }
-                    disabled={
-                      uploadingLogo
-                    }
-                    className="block text-sm text-gray-600 disabled:opacity-50"
+                    onChange={handleLogoUpload}
+                    disabled={uploadingLogo}
                   />
 
                   <p className="mt-2 text-xs text-gray-500">
@@ -892,16 +889,12 @@ export default function ConfiguracoesPage() {
                 </div>
 
                 <div>
-                  <input
-                    type="file"
+                  <FileUploadField
+                    action={uploadingDocumentLogo ? "Enviando logo..." : "Selecionar logo para documentos"}
+                    hint="Clique para selecionar uma imagem"
                     accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                    onChange={
-                      handleDocumentLogoUpload
-                    }
-                    disabled={
-                      uploadingDocumentLogo
-                    }
-                    className="block text-sm text-gray-600 disabled:opacity-50"
+                    onChange={handleDocumentLogoUpload}
+                    disabled={uploadingDocumentLogo}
                   />
 
                   <p className="mt-2 text-xs text-gray-500">

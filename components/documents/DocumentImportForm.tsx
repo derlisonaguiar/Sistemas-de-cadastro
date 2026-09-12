@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { documentEntityLabels, documentStatusLabels, documentTypeLabels, type DocumentEntityKey } from "@/lib/document-labels";
+import FileUploadField from "@/components/FileUploadField";
 
 type Choice = { id: string; name?: string; fullName?: string; title?: string };
 const keys = Object.keys(documentEntityLabels) as DocumentEntityKey[];
@@ -73,9 +74,7 @@ export default function DocumentImportForm({ initialLinks }: { initialLinks: Rec
     <p className="mt-1 mb-6 text-sm text-gray-600">Envie um PDF ou DOCX pronto e informe seus vínculos.</p>
     <form onSubmit={submit} className="space-y-5 rounded-lg border border-gray-200 bg-white p-5">
       <fieldset disabled={saving || loading || !loaded} className="grid gap-4 md:grid-cols-2">
-        <label className="text-sm md:col-span-2">Arquivo (PDF/DOCX, até 10 MB)
-          <input required name="file" type="file" accept=".pdf,.docx" className={inputClass} onChange={() => { setDuplicate(null); setConfirmDuplicate(false); }} />
-        </label>
+        <div className="text-sm md:col-span-2"><p className="mb-1">Arquivo (PDF/DOCX, até 10 MB)</p><FileUploadField required name="file" action="Selecionar documento" hint="Clique para selecionar PDF ou DOCX" accept=".pdf,.docx" onChange={() => { setDuplicate(null); setConfirmDuplicate(false); }} /></div>
         <label className="text-sm md:col-span-2">Título<input name="title" required maxLength={200} className={inputClass} /></label>
         <label className="text-sm">Tipo<select name="type" defaultValue="OTHER" className={inputClass}>{Object.entries(documentTypeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
         <label className="text-sm">Data real do documento<input required name="documentDate" type="date" className={inputClass} /></label>

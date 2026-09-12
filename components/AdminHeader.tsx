@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { LogOut, ShieldCheck } from "lucide-react";
 
 export default function AdminHeader({ isGlobalAdministration, hasOrganization }: { isGlobalAdministration: boolean; hasOrganization: boolean }) {
   const router = useRouter();
@@ -34,8 +35,8 @@ export default function AdminHeader({ isGlobalAdministration, hasOrganization }:
           </p>
         </div>
 
-        <div className="admin-avatar flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold">
-          {isGlobalAdministration ? "SA" : "AD"}
+        <div className="admin-avatar flex h-9 w-9 shrink-0 items-center justify-center rounded-full">
+          <ShieldCheck aria-hidden="true" size={18} strokeWidth={1.8} />
         </div>
 
         <button
@@ -44,7 +45,8 @@ export default function AdminHeader({ isGlobalAdministration, hasOrganization }:
           disabled={signingOut}
           className="admin-signout rounded-lg border px-3 py-1.5 text-xs font-medium disabled:opacity-50"
         >
-          {signingOut ? "Saindo..." : "Sair"}
+          <LogOut aria-hidden="true" size={15} strokeWidth={1.8} />
+          <span>{signingOut ? "Saindo..." : "Sair"}</span>
         </button>
       </div>
     </header>
