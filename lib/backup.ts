@@ -7,6 +7,7 @@ const VERSION = 1;
 const MAX_ENTRIES = 4;
 const MAX_UNCOMPRESSED = 25 * 1024 * 1024;
 type BackupData = Record<string, unknown>;
+const COLLECTIONS = ["members", "directorates", "positions", "clients", "projects", "contracts", "templates", "templateFields", "certificateAssets", "documents", "documentDeliveries"] as const;
 
 const checksum = (value: string) => createHash("sha256").update(value).digest("hex");
 const counts = (data: BackupData) => Object.fromEntries(Object.entries(data).filter(([, value]) => Array.isArray(value)).map(([key, value]) => [key, (value as unknown[]).length]));
@@ -18,7 +19,8 @@ export async function createOrganizationBackup(organizationId: string) {
   ]);
   if (!organization) throw new Error("Organização não encontrada.");
   const deliveries = documents.flatMap((document: any) => document.deliveries.map((delivery: any) => ({ ...delivery, documentId: document.id })));
-  const data = { organization, members, directorates, positions, clients, projects, contracts, templates: templates.map((template: any) => ({ ...template, fields: undefined })), templateFields: templates.flatMap((template: any) => template.fields), certificateAssets: assets, documents: documents.map((document: any) => ({ ...document, deliveries: undefined })), documentDeliveries: deliveries };
+  const { entryCodeHash: _entryCodeHash, ...backupOrganization } = organization;
+  const data = { organization: backupOrganization, members, directorates, positions, clients, projects, contracts, templates: templates.map((template: any) => ({ ...template, fields: undefined })), templateFields: templates.flatMap((template: any) => template.fields), certificateAssets: assets, documents: documents.map((document: any) => ({ ...document, deliveries: undefined })), documentDeliveries: deliveries };
   const dataJson = JSON.stringify(data);
   const manifest = { version: VERSION, createdAt: new Date().toISOString(), organization: { id: organization.id, name: organization.name }, schema: "prisma", files: ["data.json"], checksums: { "data.json": checksum(dataJson) }, counts: counts(data) };
   const zip = new PizZip(); zip.file("manifest.json", JSON.stringify(manifest)); zip.file("data.json", dataJson);
@@ -38,6 +40,9 @@ export function parseBackup(buffer: Buffer) {
   if (Buffer.byteLength(dataJson) > MAX_UNCOMPRESSED) throw new Error("Conteúdo de backup muito grande.");
   try { manifest = JSON.parse(manifestFile.asText()); data = JSON.parse(dataJson); } catch { throw new Error("Conteúdo de backup inválido."); }
   if (manifest?.version !== VERSION || !manifest.organization?.id || manifest.checksums?.["data.json"] !== checksum(dataJson)) throw new Error("Versão ou integridade do backup inválida.");
+  if (!data || typeof data !== "object" || Array.isArray(data) || !data.organization || typeof data.organization !== "object" || COLLECTIONS.some((collection) => !Array.isArray(data[collection]))) {
+    throw new Error("Estrutura dos dados de backup inválida.");
+  }
   return { manifest, data, summary: counts(data) };
 }
 
@@ -51,7 +56,7 @@ export async function applyBackup(organizationId: string, data: BackupData, mode
   await database.$transaction(async (tx: any) => {
     if (mode === "RESTORE") {
       await tx.document.deleteMany({ where: { organizationId } }); await tx.documentTemplate.deleteMany({ where: { organizationId } }); await tx.contract.deleteMany({ where: { organizationId } }); await tx.project.deleteMany({ where: { organizationId } }); await tx.client.deleteMany({ where: { organizationId } }); await tx.member.deleteMany({ where: { organizationId } }); await tx.position.deleteMany({ where: { organizationId } }); await tx.directorate.deleteMany({ where: { organizationId } }); await tx.certificateAsset.deleteMany({ where: { organizationId } });
-      const organizationData = withoutTimestamps(sourceOrganization); delete organizationData.id;
+      const organizationData = withoutTimestamps(sourceOrganization); delete organizationData.id; delete organizationData.entryCodeHash;
       await tx.organization.update({ where: { id: organizationId }, data: organizationData });
     }
     const modelByCollection: Record<string, string> = { directorates: "directorate", positions: "position", members: "member", clients: "client", projects: "project", contracts: "contract", templates: "documentTemplate", templateFields: "documentTemplateField", certificateAssets: "certificateAsset", documents: "document", documentDeliveries: "documentDelivery" };
