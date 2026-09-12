@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { createClient } from "@/lib/supabase/server";
+import { getSessionIdentity } from "@/lib/local-auth";
 
 export type AuthFailure = "UNAUTHORIZED" | "PROFILE_REQUIRED" | "FORBIDDEN";
 
@@ -12,9 +12,7 @@ export class AuthError extends Error {
 }
 
 export async function getAuthenticatedUser() {
-  const supabase = await createClient();
-  const { data: { user }, error } = await supabase.auth.getUser();
-  return error || !user ? null : user;
+  return getSessionIdentity();
 }
 
 export async function getAuthenticatedProfile() {

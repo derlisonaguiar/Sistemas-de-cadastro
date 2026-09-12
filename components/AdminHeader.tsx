@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 
 export default function AdminHeader() {
   const router = useRouter();
@@ -10,7 +9,7 @@ export default function AdminHeader() {
 
   async function handleSignOut() {
     setSigningOut(true);
-    await createClient().auth.signOut();
+    await fetch("/api/auth/logout", { method: "POST" });
     router.replace("/login");
     router.refresh();
   }

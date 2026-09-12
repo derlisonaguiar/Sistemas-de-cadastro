@@ -1,17 +1,7 @@
-import { createClient } from "@supabase/supabase-js";
+import { prisma } from "@/lib/prisma";
+import { verifyPassword } from "@/lib/local-auth";
 
 export async function verifyAdminPassword(user: { id: string; email?: string }, password: string) {
-  if (!user.email) return false;
-  try {
-    // Isolated client: never replace the administrator's session or persist credentials.
-    const client = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } },
-    );
-    const { data, error } = await client.auth.signInWithPassword({ email: user.email, password });
-    return !error && data.user?.id === user.id;
-  } catch {
-    return false;
-  }
+  const localUser = await prisma.authUser.findUnique({ where: { id: user.id }, select: { passwordHash: true, active: true } });
+  return Boolean(localUser?.active && await verifyPassword(password, localUser.passwordHash));
 }

@@ -43,19 +43,20 @@ model Organization {
 
   documentHeaderText String?
 
-  users             UserProfile[]
-  members           Member[]
-  directorates      Directorate[]
-  positions         Position[]
-  clients           Client[]
-  projects          Project[]
-  contracts         Contract[]
-  documents         Document[]
-  documentTemplates DocumentTemplate[]
-  certificateAssets CertificateAsset[]
-  userInvitations   UserInvitation[]
-  backupSettings    BackupSettings?
-  backupAudits      BackupAudit[]
+  users              UserProfile[]
+  members            Member[]
+  directorates       Directorate[]
+  positions          Position[]
+  clients            Client[]
+  projects           Project[]
+  contracts          Contract[]
+  documents          Document[]
+  documentTemplates  DocumentTemplate[]
+  certificateAssets  CertificateAsset[]
+  userInvitations    UserInvitation[]
+  memberApplications MemberApplication[]
+  backupSettings     BackupSettings?
+  backupAudits       BackupAudit[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -78,12 +79,36 @@ model UserProfile {
   @@index([role])
 }
 
+model AuthUser {
+  id               String   @id @default(cuid())
+  email            String   @unique
+  passwordHash     String
+  name             String?
+  selfEnrollment   Boolean  @default(false)
+  active           Boolean  @default(true)
+  sessions         AuthSession[]
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model AuthSession {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      AuthUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
 model UserInvitation {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   organizationId String
   email          String
-  tokenHash      String   @unique
-  role           UserRole @default(USER)
+  tokenHash      String    @unique
+  role           UserRole  @default(USER)
   expiresAt      DateTime
   usedAt         DateTime?
   createdById    String
@@ -150,24 +175,30 @@ enum DocumentStatus {
   CANCELED
 }
 
+enum MemberApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model BackupSettings {
-  organizationId String @id
-  destination    String @default("LOCAL")
-  frequency      String @default("MANUAL")
+  organizationId String       @id
+  destination    String       @default("LOCAL")
+  frequency      String       @default("MANUAL")
   lastBackupAt   DateTime?
   lastBackupById String?
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 }
 
 model BackupAudit {
-  id             String @id @default(cuid())
+  id             String       @id @default(cuid())
   organizationId String
   userId         String
   operation      String
   summary        Json?
-  createdAt      DateTime @default(now())
+  createdAt      DateTime     @default(now())
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([organizationId, createdAt])
@@ -222,15 +253,16 @@ enum DeliveryStatus {
 }
 
 model Member {
-  id             String @id @default(cuid())
+  id             String  @id @default(cuid())
   organizationId String
+  userId         String? @unique
 
-  fullName String
-  email    String?
-  cpf      String?
+  fullName       String
+  email          String?
+  cpf            String?
   cpfNeedsReview Boolean @default(false)
-  phone    String?
-  photoUrl String?
+  phone          String?
+  photoUrl       String?
 
   course       String?
   registration String?
@@ -251,8 +283,8 @@ model Member {
   entryDate DateTime?
   exitDate  DateTime?
 
-  status MemberStatus @default(ACTIVE)
-  membershipHistory Json @default("[]")
+  status            MemberStatus @default(ACTIVE)
+  membershipHistory Json         @default("[]")
 
   directorateId String?
   positionId    String?
@@ -271,6 +303,46 @@ model Member {
   @@index([organizationId])
   @@index([directorateId])
   @@index([positionId])
+}
+
+model MemberApplication {
+  id             String @id @default(cuid())
+  organizationId String
+  userId         String @unique
+
+  fullName      String
+  email         String?
+  cpf           String
+  phone         String?
+  photoUrl      String?
+  course        String?
+  registration  String?
+  nationality   String?
+  maritalStatus String?
+  rg            String?
+  rgIssuer      String?
+  address       String?
+  addressNumber String?
+  neighborhood  String?
+  cep           String?
+  city          String?
+  state         String?
+
+  status          MemberApplicationStatus @default(PENDING)
+  directorateId   String?
+  positionId      String?
+  rejectionReason String?
+  reviewedById    String?
+  reviewedAt      DateTime?
+  memberId        String?                 @unique
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, cpf])
+  @@index([organizationId, status, createdAt])
 }
 
 model Directorate {
@@ -293,7 +365,7 @@ model Directorate {
 }
 
 model Position {
-  id             String @id @default(cuid())
+  id             String  @id @default(cuid())
   organizationId String
   directorateId  String?
 
@@ -431,9 +503,9 @@ model DocumentTemplate {
   originalMimeType String?
   originalFileSize Int?
 
-  sourceType       TemplateSourceType       @default(DOCX)
-  renderMode       TemplateRenderMode       @default(DOCX_TEMPLATE)
-  processingStatus TemplateProcessingStatus @default(READY)
+  sourceType        TemplateSourceType       @default(DOCX)
+  renderMode        TemplateRenderMode       @default(DOCX_TEMPLATE)
+  processingStatus  TemplateProcessingStatus @default(READY)
   processingVersion Int                      @default(1)
   layoutJson        Json?
   confirmedAt       DateTime?
@@ -468,13 +540,13 @@ model DocumentTemplateField {
 
   required Boolean @default(false)
 
-  confidence Float?
-  confirmed  Boolean @default(false)
-  page       Int?
-  x          Float?
-  y          Float?
-  width      Float?
-  height     Float?
+  confidence   Float?
+  confirmed    Boolean @default(false)
+  page         Int?
+  x            Float?
+  y            Float?
+  width        Float?
+  height       Float?
   exampleValue String?
 
   template DocumentTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
@@ -518,18 +590,18 @@ model Document {
 
   status DocumentStatus @default(DRAFT)
 
-  origin DocumentOrigin @default(GENERATED)
-  documentDate DateTime? @db.Date
-  organizationDocument Boolean @default(false)
-  importedById String?
-  importedAt DateTime?
-  importedFileHash String?
-  importedFileName String?
-  importedMimeType String?
-  importedFileSize Int?
-  importLinks Json?
-  duplicateOfId String?
-  duplicateReason String?
+  origin               DocumentOrigin @default(GENERATED)
+  documentDate         DateTime?      @db.Date
+  organizationDocument Boolean        @default(false)
+  importedById         String?
+  importedAt           DateTime?
+  importedFileHash     String?
+  importedFileName     String?
+  importedMimeType     String?
+  importedFileSize     Int?
+  importLinks          Json?
+  duplicateOfId        String?
+  duplicateReason      String?
 
   description String?
 
@@ -539,8 +611,8 @@ model Document {
 
   generatedDocxUrl String?
   generatedPdfUrl  String?
-  signedFile      String?
-  signedAt        DateTime?
+  signedFile       String?
+  signedAt         DateTime?
 
   templateLayoutVersion  Int?
   templateLayoutSnapshot Json?
@@ -563,7 +635,6 @@ model Document {
 
   @@index([organizationId, importedFileHash])
   @@index([organizationId, documentDate])
-
   @@index([organizationId])
   @@index([templateId])
   @@index([memberId])

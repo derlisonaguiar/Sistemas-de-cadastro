@@ -73,6 +73,30 @@ export const memberSchema = z.object({
   message: "A data de saída não pode ser anterior à entrada.", path: ["exitDate"],
 });
 
+export const memberApplicationSchema = z.object({
+  fullName: requiredText(200), email: optionalEmail, cpf: requiredCpf, phone: optionalText(30),
+  course: optionalText(160), registration: optionalText(80), nationality: optionalText(80),
+  maritalStatus: optionalText(50), rg: optionalText(30), rgIssuer: optionalText(30),
+  address: optionalText(250), addressNumber: optionalText(30), neighborhood: optionalText(120),
+  cep: optionalText(12), city: optionalText(120), state: optionalText(120),
+}).strict();
+
+export const memberApplicationReviewSchema = memberApplicationSchema.extend({
+  directorateId: optionalIdSchema,
+  positionId: optionalIdSchema,
+}).strict();
+
+export const memberApplicationDecisionSchema = z.object({
+  action: z.enum(["APPROVE", "REJECT"]),
+  rejectionReason: optionalText(1000),
+}).strict();
+
+export const signupSchema = z.object({
+  name: requiredText(200),
+  email: z.string().trim().toLowerCase().email().max(254),
+  password: z.string().min(8).max(256),
+}).strict();
+
 export const directorateSchema = z.object({
   name: requiredText(120), description: optionalText(1000), active: z.boolean().optional(),
 }).strict();

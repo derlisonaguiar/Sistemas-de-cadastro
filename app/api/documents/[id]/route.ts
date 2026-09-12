@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getAdminApiContext } from "@/lib/auth";
 import { parseJsonRequest } from "@/lib/api";
 import { documentSchema, routeIdSchema } from "@/lib/validation";
-import { createSignedStorageUrl } from "@/lib/storage";
+import { createPrivateFileUrl } from "@/lib/storage";
 import { DocumentImportError, validateDocumentLinks } from "@/lib/document-import";
 import { getDocumentReview } from "@/lib/document-review";
 
@@ -68,10 +68,10 @@ export async function GET(
         ...document,
         template: undefined,
         review: review ? { fields: review.fields, values: review.values } : null,
-        signedFile: document.signedFile ? await createSignedStorageUrl(document.signedFile) : null,
-        fileUrl: document.fileUrl ? await createSignedStorageUrl(document.fileUrl) : null,
-        generatedDocxUrl: document.generatedDocxUrl ? await createSignedStorageUrl(document.generatedDocxUrl) : null,
-        generatedPdfUrl: document.generatedPdfUrl ? await createSignedStorageUrl(document.generatedPdfUrl) : null,
+        signedFile: document.signedFile ? createPrivateFileUrl(document.signedFile) : null,
+        fileUrl: document.fileUrl ? createPrivateFileUrl(document.fileUrl) : null,
+        generatedDocxUrl: document.generatedDocxUrl ? createPrivateFileUrl(document.generatedDocxUrl) : null,
+        generatedPdfUrl: document.generatedPdfUrl ? createPrivateFileUrl(document.generatedPdfUrl) : null,
       },
     });
   } catch (error) {

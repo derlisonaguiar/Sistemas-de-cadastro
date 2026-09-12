@@ -1,4 +1,3 @@
-import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function proxy(request: NextRequest) {
@@ -6,55 +5,6 @@ export async function proxy(request: NextRequest) {
   if (request.nextUrl.pathname === "/uploads" || request.nextUrl.pathname.startsWith("/uploads/")) {
     return new NextResponse(null, { status: 404, headers: { "Cache-Control": "private, no-store" } });
   }
-  let response = NextResponse.next({
-    request,
-  });
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(
-            ({ name, value }) => {
-              request.cookies.set(
-                name,
-                value
-              );
-            }
-          );
-
-          response = NextResponse.next({
-            request,
-          });
-
-          cookiesToSet.forEach(
-            ({
-              name,
-              value,
-              options,
-            }) => {
-              response.cookies.set(
-                name,
-                value,
-                options
-              );
-            }
-          );
-        },
-      },
-    }
-  );
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
   const pathname =
     request.nextUrl.pathname;
 
@@ -78,53 +28,7 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  const isAdminRoute =
-    pathname.startsWith("/admin");
-
-  const isAdministrativeApi =
-    pathname.startsWith("/api/") &&
-    !pathname.startsWith("/api/auth/link") &&
-    !pathname.startsWith("/api/auth/login") &&
-    !pathname.startsWith("/api/health/");
-
-  const isLoginRoute =
-    pathname === "/login";
-
-  if (
-    (isAdminRoute || isAdministrativeApi) &&
-    !user
-  ) {
-    if (isAdministrativeApi) {
-      return NextResponse.json(
-        { ok: false, message: "Não autenticado." },
-        { status: 401 }
-      );
-    }
-    const url =
-      request.nextUrl.clone();
-
-    url.pathname = "/login";
-
-    return NextResponse.redirect(
-      url
-    );
-  }
-
-  if (
-    isLoginRoute &&
-    user
-  ) {
-    const url =
-      request.nextUrl.clone();
-
-    url.pathname = "/admin";
-
-    return NextResponse.redirect(
-      url
-    );
-  }
-
-  return response;
+  return NextResponse.next({ request });
 }
 
 export const config = {
@@ -133,5 +37,7 @@ export const config = {
     "/admin/:path*",
     "/api/:path*",
     "/login",
+    "/inscricao",
+    "/vincular",
   ],
 };

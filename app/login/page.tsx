@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -37,7 +38,8 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/admin");
+      const next = new URLSearchParams(window.location.search).get("next");
+      router.push(next === "/inscricao" ? "/inscricao" : "/admin");
       router.refresh();
     } catch (error) {
       console.error(
@@ -124,6 +126,7 @@ export default function LoginPage() {
               : "Entrar"}
           </button>
         </form>
+        <p className="mt-4 text-center text-sm text-gray-600">Quer se inscrever? <Link href="/cadastro" className="font-medium text-purple-700">Criar conta</Link></p>
       </div>
     </main>
   );

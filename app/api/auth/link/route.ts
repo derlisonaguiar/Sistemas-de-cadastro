@@ -43,6 +43,9 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => null);
     const createOrganization = createLocalOrganizationSchema.safeParse(body);
     if (createOrganization.success) {
+      if (user.user_metadata?.self_enrollment === true) {
+        return NextResponse.json({ ok: false, message: "Esta conta deve concluir a inscrição de membro." }, { status: 403 });
+      }
       const profile = await prisma.$transaction(async (transaction) => {
         const stillUnlinked = await transaction.userProfile.findUnique({ where: { id: user.id }, select: { id: true } });
         if (stillUnlinked) throw new Error("PROFILE_ALREADY_LINKED");

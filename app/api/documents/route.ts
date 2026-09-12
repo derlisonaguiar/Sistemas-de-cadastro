@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAdminApiContext } from "@/lib/auth";
 import { documentFiltersSchema, documentWhere } from "@/lib/document-filters";
-import { createSignedStorageUrl } from "@/lib/storage";
+import { createPrivateFileUrl } from "@/lib/storage";
 
 export async function GET(
   request: Request
@@ -97,13 +97,13 @@ export async function GET(
 
     const safeDocuments = await Promise.all(documents.map(async (document) => ({
       ...document,
-      fileUrl: document.fileUrl ? await createSignedStorageUrl(document.fileUrl) : null,
-      signedFile: document.signedFile ? await createSignedStorageUrl(document.signedFile) : null,
+      fileUrl: document.fileUrl ? createPrivateFileUrl(document.fileUrl) : null,
+      signedFile: document.signedFile ? createPrivateFileUrl(document.signedFile) : null,
       generatedDocxUrl: document.generatedDocxUrl
-        ? await createSignedStorageUrl(document.generatedDocxUrl)
+        ? createPrivateFileUrl(document.generatedDocxUrl)
         : null,
       generatedPdfUrl: document.generatedPdfUrl
-        ? await createSignedStorageUrl(document.generatedPdfUrl)
+        ? createPrivateFileUrl(document.generatedPdfUrl)
         : null,
     })));
 

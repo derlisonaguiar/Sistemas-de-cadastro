@@ -1,77 +1,27 @@
 import "server-only";
-import { createClient } from "@supabase/supabase-js";
+import { mkdir, readFile, rename, rm, writeFile } from "fs/promises";
+import path from "path";
+import { randomUUID } from "crypto";
 
-export const PRIVATE_BUCKET = process.env.SUPABASE_PRIVATE_BUCKET || "private-documents";
-export const PUBLIC_ASSETS_BUCKET = process.env.SUPABASE_PUBLIC_ASSETS_BUCKET || "public-assets";
-
-function adminClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !serviceKey) throw new Error("Supabase Storage não configurado no servidor.");
-  return createClient(url, serviceKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+const ROOT = path.resolve(process.env.LOCAL_STORAGE_PATH || path.join(process.cwd(), "storage", "private"));
+const PREFIX = "local://";
+function safePath(objectPath: string) {
+  const normalized = objectPath.replaceAll("\\", "/").replace(/^\/+/, "");
+  if (!normalized || normalized.split("/").some(part => !part || part === "." || part === "..") || !/^organizations\/[A-Za-z0-9_-]+\//.test(normalized)) throw new Error("Caminho de armazenamento inválido.");
+  const resolved = path.resolve(ROOT, normalized);
+  if (!resolved.startsWith(`${ROOT}${path.sep}`)) throw new Error("Caminho de armazenamento inválido.");
+  return { normalized, resolved };
 }
-
-export function storageReference(bucket: string, objectPath: string) {
-  return `storage://${bucket}/${objectPath}`;
+export function storageReference(_bucket: string, objectPath: string) { return `${PREFIX}${safePath(objectPath).normalized}`; }
+export function parseStorageReference(reference: string | null | undefined) { if (!reference?.startsWith(PREFIX)) return null; try { return { path: safePath(reference.slice(PREFIX.length)).normalized }; } catch { return null; } }
+export async function uploadPrivateObject(objectPath: string, data: Buffer, _contentType: string) {
+  const target = safePath(objectPath); await mkdir(path.dirname(target.resolved), { recursive: true }); const temporary = `${target.resolved}.${randomUUID()}.tmp`;
+  try { await writeFile(temporary, data, { flag: "wx", mode: 0o600 }); await rename(temporary, target.resolved); } catch { await rm(temporary, { force: true }).catch(() => undefined); throw new Error("Falha ao armazenar arquivo privado."); }
+  return `${PREFIX}${target.normalized}`;
 }
-
-export function parseStorageReference(reference: string | null | undefined) {
-  if (!reference?.startsWith("storage://")) return null;
-  const value = reference.slice("storage://".length);
-  const separator = value.indexOf("/");
-  if (separator < 1) return null;
-  return { bucket: value.slice(0, separator), path: value.slice(separator + 1) };
-}
-
-export async function uploadPrivateObject(objectPath: string, data: Buffer, contentType: string) {
-  const { error } = await adminClient().storage.from(PRIVATE_BUCKET).upload(objectPath, data, {
-    contentType, upsert: false, cacheControl: "private, max-age=0",
-  });
-  if (error) throw new Error("Falha ao armazenar arquivo privado.");
-  return storageReference(PRIVATE_BUCKET, objectPath);
-}
-
-export async function uploadPublicObject(objectPath: string, data: Buffer, contentType: string) {
-  const client = adminClient();
-  const { error } = await client.storage.from(PUBLIC_ASSETS_BUCKET).upload(objectPath, data, {
-    contentType, upsert: true, cacheControl: "public, max-age=3600",
-  });
-  if (error) throw new Error("Falha ao armazenar arquivo público.");
-  return client.storage.from(PUBLIC_ASSETS_BUCKET).getPublicUrl(objectPath).data.publicUrl;
-}
-
-export async function downloadStorageObject(reference: string) {
-  let parsed = parseStorageReference(reference);
-  // Logos uploaded by this application are public Supabase assets, not local files.
-  if (!parsed && process.env.NEXT_PUBLIC_SUPABASE_URL) {
-    try {
-      const url = new URL(reference);
-      const base = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL);
-      const prefix = `/storage/v1/object/public/${PUBLIC_ASSETS_BUCKET}/`;
-      if (url.origin === base.origin && url.pathname.startsWith(prefix)) {
-        parsed = { bucket: PUBLIC_ASSETS_BUCKET, path: decodeURIComponent(url.pathname.slice(prefix.length)) };
-      }
-    } catch { return null; }
-  }
-  if (!parsed) return null;
-  const { data, error } = await adminClient().storage.from(parsed.bucket).download(parsed.path);
-  if (error || !data) throw new Error("Arquivo privado não encontrado.");
-  return Buffer.from(await data.arrayBuffer());
-}
-
-export async function createSignedStorageUrl(reference: string, expiresIn = 300) {
-  const parsed = parseStorageReference(reference);
-  if (!parsed) throw new Error("Arquivo privado legado precisa ser migrado para Storage.");
-  const { data, error } = await adminClient().storage.from(parsed.bucket).createSignedUrl(parsed.path, expiresIn);
-  if (error || !data) throw new Error("Não foi possível autorizar o download.");
-  return data.signedUrl;
-}
-
-export async function removeStorageObject(reference: string) {
-  const parsed = parseStorageReference(reference);
-  if (!parsed) return;
-  const { error } = await adminClient().storage.from(parsed.bucket).remove([parsed.path]);
-  if (error) throw new Error("Não foi possível remover o arquivo privado.");
-}
+export async function uploadPublicObject(objectPath: string, data: Buffer, contentType: string) { return createPrivateFileUrl(await uploadPrivateObject(objectPath, data, contentType)); }
+export async function downloadStorageObject(reference: string) { const parsed = parseStorageReference(reference); if (!parsed) return null; try { return await readFile(safePath(parsed.path).resolved); } catch { throw new Error("Arquivo privado não encontrado."); } }
+export function createPrivateFileUrl(reference: string) { if (!parseStorageReference(reference)) throw new Error("Referência de arquivo inválida."); return `/api/files?ref=${encodeURIComponent(reference)}`; }
+/** @deprecated Local compatibility name; returns an authenticated local route, never a signed URL. */
+export async function createSignedStorageUrl(reference: string, _expiresIn = 300) { return createPrivateFileUrl(reference); }
+export async function removeStorageObject(reference: string) { const parsed = parseStorageReference(reference); if (parsed) await rm(safePath(parsed.path).resolved, { force: true }); }

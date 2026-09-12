@@ -117,6 +117,7 @@ export default function AdminSidebar() {
               ))}
             </ul>
           </li></AdminOnly>
+          <AdminOnly><li><Link href="/admin/inscricoes" aria-current={pathname === "/admin/inscricoes" ? "page" : undefined} className="admin-nav-link">Inscrições</Link></li></AdminOnly>
         </ul>
       </nav>
     </aside>

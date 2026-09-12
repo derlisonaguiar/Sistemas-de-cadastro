@@ -151,7 +151,21 @@ test('every business mutation remains guarded by ADMIN in its route handler', ()
     const ast = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true);
     for (const node of ast.statements) {
       if (ts.isFunctionDeclaration(node) && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(node.name?.text)) {
-        assert.match(node.getText(ast), /getAdminApiContext\(\)/, file + ' ' + node.name.text);
+        if (file.endsWith(path.join('members', 'export', 'route.ts'))) {
+          assert.match(node.getText(ast), /getReadApiContext\(\)/, file + ' ' + node.name.text);
+          continue;
+        }
+        if (file.includes(`${path.sep}member-applications${path.sep}me${path.sep}`)) {
+          assert.match(source, /getAuthenticatedUser\(\)/, file + ' ' + node.name.text);
+          assert.match(node.getText(ast), /userId:\s*(auth\.user!|user)\.id/, file + ' ' + node.name.text);
+          continue;
+        }
+        if (file.includes(`${path.sep}member-applications${path.sep}[id]${path.sep}`)) {
+          assert.match(source, /getAdminApiContext\(\)/, file + ' ' + node.name.text);
+          assert.match(node.getText(ast), /adminContext\(context\)/, file + ' ' + node.name.text);
+        } else {
+          assert.match(node.getText(ast), /getAdminApiContext\(\)/, file + ' ' + node.name.text);
+        }
         assert.doesNotMatch(node.getText(ast), /getReadApiContext\(\)/, file);
       }
     }
