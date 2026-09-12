@@ -22,8 +22,8 @@ export default function OrganizationScope({ hasOrganization, children }: Organiz
     <section className="max-w-2xl rounded-xl border bg-white p-6">
       <h1 className="text-xl font-semibold text-gray-900">Área vinculada a uma organização</h1>
       <p className="mt-2 text-sm text-gray-600">
-        Esta área utiliza dados de uma organização específica. O acesso global foi mantido,
-        mas nenhuma organização foi selecionada para este SUPERADMIN.
+        Esta área utiliza dados de uma organização específica. O acesso global foi mantido, mas nenhuma organização foi
+        selecionada para este SUPERADMIN.
       </p>
     </section>
   );

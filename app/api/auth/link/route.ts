@@ -16,10 +16,7 @@ export async function POST(request: Request) {
     if (limited) return limited;
     const user = await getAuthenticatedUser();
     if (!user) {
-      return NextResponse.json(
-        { ok: false, message: "Não autenticado." },
-        { status: 401 }
-      );
+      return NextResponse.json({ ok: false, message: "Não autenticado." }, { status: 401 });
     }
 
     const existingProfile = await prisma.userProfile.findUnique({
@@ -27,40 +24,58 @@ export async function POST(request: Request) {
       select: { id: true },
     });
     if (existingProfile) {
-      return NextResponse.json(
-        { ok: false, message: "Usuário já vinculado a uma organização." },
-        { status: 409 }
-      );
+      return NextResponse.json({ ok: false, message: "Usuário já vinculado a uma organização." }, { status: 409 });
     }
 
     const email = user.email?.trim().toLowerCase();
     if (!email) {
-      return NextResponse.json(
-        { ok: false, message: "A conta autenticada não possui e-mail." },
-        { status: 403 }
-      );
+      return NextResponse.json({ ok: false, message: "A conta autenticada não possui e-mail." }, { status: 403 });
     }
 
     const body = await request.json().catch(() => null);
     const createOrganization = createLocalOrganizationSchema.safeParse(body);
     if (createOrganization.success) {
       if (getDeploymentMode() === "single") {
-        return NextResponse.json({ ok: false, message: "Use o setup inicial para criar a organização desta instalação." }, { status: 403 });
+        return NextResponse.json(
+          { ok: false, message: "Use o setup inicial para criar a organização desta instalação." },
+          { status: 403 }
+        );
       }
       if (user.user_metadata?.self_enrollment === true) {
-        return NextResponse.json({ ok: false, message: "Esta conta deve concluir a inscrição de membro." }, { status: 403 });
+        return NextResponse.json(
+          { ok: false, message: "Esta conta deve concluir a inscrição de membro." },
+          { status: 403 }
+        );
       }
       const profile = await prisma.$transaction(async (transaction) => {
-        const stillUnlinked = await transaction.userProfile.findUnique({ where: { id: user.id }, select: { id: true } });
+        const stillUnlinked = await transaction.userProfile.findUnique({
+          where: { id: user.id },
+          select: { id: true },
+        });
         if (stillUnlinked) throw new Error("PROFILE_ALREADY_LINKED");
-        const organization = await transaction.organization.create({ data: { name: createOrganization.data.organizationName } });
-        return transaction.userProfile.create({ data: { id: user.id, organizationId: organization.id, role: "ADMIN", email, name: user.user_metadata?.name || null }, select: { id: true, organizationId: true, role: true } });
+        const organization = await transaction.organization.create({
+          data: { name: createOrganization.data.organizationName },
+        });
+        return transaction.userProfile.create({
+          data: {
+            id: user.id,
+            organizationId: organization.id,
+            role: "ADMIN",
+            email,
+            name: user.user_metadata?.name || null,
+          },
+          select: { id: true, organizationId: true, role: true },
+        });
       });
       return NextResponse.json({ ok: true, profile });
     }
 
     const parsed = linkInvitationSchema.safeParse(body);
-    if (!parsed.success) return NextResponse.json({ ok: false, message: "Informe um convite válido ou o nome da organização." }, { status: 400 });
+    if (!parsed.success)
+      return NextResponse.json(
+        { ok: false, message: "Informe um convite válido ou o nome da organização." },
+        { status: 400 }
+      );
     const { token } = parsed.data;
 
     const invitation = await prisma.userInvitation.findUnique({
@@ -73,10 +88,7 @@ export async function POST(request: Request) {
       invitation.expiresAt <= new Date() ||
       invitation.email.toLowerCase() !== email
     ) {
-      return NextResponse.json(
-        { ok: false, message: "Convite inválido ou expirado." },
-        { status: 403 }
-      );
+      return NextResponse.json({ ok: false, message: "Convite inválido ou expirado." }, { status: 403 });
     }
 
     const profile = await prisma.$transaction(async (transaction) => {
@@ -99,17 +111,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, profile });
   } catch (error) {
     if (error instanceof Error && error.message === "INVITATION_ALREADY_USED") {
-      return NextResponse.json(
-        { ok: false, message: "Convite já utilizado." },
-        { status: 409 }
-      );
+      return NextResponse.json({ ok: false, message: "Convite já utilizado." }, { status: 409 });
     }
-    if (error instanceof Error && error.message === "PROFILE_ALREADY_LINKED") return NextResponse.json({ ok: false, message: "Usuário já vinculado a uma organização." }, { status: 409 });
-    if (typeof error === "object" && error && "code" in error && error.code === "P2002") return NextResponse.json({ ok: false, message: "Usuário já vinculado a uma organização." }, { status: 409 });
+    if (error instanceof Error && error.message === "PROFILE_ALREADY_LINKED")
+      return NextResponse.json({ ok: false, message: "Usuário já vinculado a uma organização." }, { status: 409 });
+    if (typeof error === "object" && error && "code" in error && error.code === "P2002")
+      return NextResponse.json({ ok: false, message: "Usuário já vinculado a uma organização." }, { status: 409 });
     console.error("Erro ao vincular usuário:", error);
-    return NextResponse.json(
-      { ok: false, message: "Erro ao vincular usuário." },
-      { status: 500 }
-    );
+    return NextResponse.json({ ok: false, message: "Erro ao vincular usuário." }, { status: 500 });
   }
 }

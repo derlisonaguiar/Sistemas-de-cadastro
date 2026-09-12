@@ -30,7 +30,9 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
     hasOrganization = Boolean(auth.organization);
     faviconUrl = auth.organization?.faviconUrl ?? null;
     navigation = resolveAdminNavigation({ deploymentMode: getDeploymentMode(), isSuperadmin, hasOrganization });
-    theme = auth.organization ? adminThemeStyle(auth.organization) : adminThemeStyle({ primaryColor: "#6D28D9", secondaryColor: "#FFFFFF" });
+    theme = auth.organization
+      ? adminThemeStyle(auth.organization)
+      : adminThemeStyle({ primaryColor: "#6D28D9", secondaryColor: "#FFFFFF" });
   } catch (error) {
     if (error instanceof AuthError) {
       if (error.code === "UNAUTHORIZED") redirect("/login");
@@ -46,23 +48,27 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
 
   return (
     <AccessProvider isAdmin={isAdmin}>
-    <div className="admin-shell min-h-screen" style={theme}>
-      <OrganizationFavicon href={faviconUrl} />
-      <div className="admin-layout">
-        <AdminSidebar navigation={navigation!} />
+      <div className="admin-shell min-h-screen" style={theme}>
+        <OrganizationFavicon href={faviconUrl} />
+        <div className="admin-layout">
+          <AdminSidebar navigation={navigation!} />
 
-        <div className="flex min-w-0 flex-1 flex-col">
-          <AdminHeader isGlobalAdministration={navigation!.isGlobalAdministration} hasOrganization={hasOrganization} />
+          <div className="flex min-w-0 flex-1 flex-col">
+            <AdminHeader
+              isGlobalAdministration={navigation!.isGlobalAdministration}
+              hasOrganization={hasOrganization}
+            />
 
-          <main className="admin-content flex-1">
-            <OrganizationScope hasOrganization={hasOrganization}>{children}</OrganizationScope>
-          </main>
-          <footer className="px-4 py-4 text-center text-xs leading-5 text-gray-500 sm:px-8">
-            Desenvolvido por Brainstorm Engenharia — Empresa Júnior de Engenharia da Computação e Telecomunicações - UFPA
-          </footer>
+            <main className="admin-content flex-1">
+              <OrganizationScope hasOrganization={hasOrganization}>{children}</OrganizationScope>
+            </main>
+            <footer className="px-4 py-4 text-center text-xs leading-5 text-gray-500 sm:px-8">
+              Desenvolvido por Brainstorm Engenharia — Empresa Júnior de Engenharia da Computação e Telecomunicações -
+              UFPA
+            </footer>
+          </div>
         </div>
       </div>
-    </div>
     </AccessProvider>
   );
 }

@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test:security": "node --experimental-strip-types --test tests/file-security.test.ts tests/certificate-layout.test.ts",
     "create:superadmin": "node --experimental-strip-types scripts/create-superadmin.ts",
     "setup:fresh": "node scripts/setup-fresh.mjs"
@@ -39,6 +41,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.1",
+    "prettier": "^3.9.6",
     "prisma": "^6.12.0",
     "tailwindcss": "^4",
     "typescript": "^5"

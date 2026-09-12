@@ -117,25 +117,15 @@ export async function POST(request: Request) {
         description: data.description?.trim() || null,
         contractNumber: data.contractNumber?.trim() || null,
 
-        value:
-          data.value !== undefined &&
-          data.value !== null
-            ? data.value
-            : null,
+        value: data.value !== undefined && data.value !== null ? data.value : null,
 
-        startDate: data.startDate
-          ? new Date(data.startDate)
-          : null,
+        startDate: data.startDate ? new Date(data.startDate) : null,
 
-        endDate: data.endDate
-          ? new Date(data.endDate)
-          : null,
+        endDate: data.endDate ? new Date(data.endDate) : null,
 
         status: data.status || "DRAFT",
 
-        signatureDate: data.signatureDate
-          ? new Date(data.signatureDate)
-          : null,
+        signatureDate: data.signatureDate ? new Date(data.signatureDate) : null,
 
         notes: data.notes?.trim() || null,
       },

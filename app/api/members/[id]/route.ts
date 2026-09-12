@@ -10,7 +10,8 @@ import { z } from "zod";
 import { memberSchema, routeIdSchema } from "@/lib/validation";
 
 function isCpfConflict(error: unknown) {
-  if (typeof error !== "object" || !error || !("code" in error) || error.code !== "P2002" || !("meta" in error)) return false;
+  if (typeof error !== "object" || !error || !("code" in error) || error.code !== "P2002" || !("meta" in error))
+    return false;
   const target = (error.meta as { target?: unknown })?.target;
   return Array.isArray(target) && target.includes("cpf");
 }
@@ -21,10 +22,12 @@ type RouteContext = {
   }>;
 };
 
-const statusChangeSchema = z.object({
-  status: z.enum(["ACTIVE", "INACTIVE", "LEAVE", "ALUMNI", "POS_JR"]),
-  password: z.string().min(1).max(1024),
-}).strict();
+const statusChangeSchema = z
+  .object({
+    status: z.enum(["ACTIVE", "INACTIVE", "LEAVE", "ALUMNI", "POS_JR"]),
+    password: z.string().min(1).max(1024),
+  })
+  .strict();
 
 export async function PATCH(request: Request, context: RouteContext) {
   try {
@@ -40,7 +43,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     const where = { id: params.data.id, organizationId: profile.organizationId };
     const existingMember = await prisma.member.findFirst({ where, select: { id: true } });
     if (!existingMember) return NextResponse.json({ ok: false, message: "Membro não encontrado." }, { status: 404 });
-    if (!await verifyAdminPassword(user, parsed.data!.password)) {
+    if (!(await verifyAdminPassword(user, parsed.data!.password))) {
       return NextResponse.json({ ok: false, message: "Não foi possível confirmar a alteração." }, { status: 401 });
     }
     const member = await updateMember({ where, data: { status: parsed.data!.status } });
@@ -50,10 +53,7 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 }
 
-export async function GET(
-  request: Request,
-  context: RouteContext
-) {
+export async function GET(request: Request, context: RouteContext) {
   try {
     const params = routeIdSchema.safeParse(await context.params);
     if (!params.success) return NextResponse.json({ ok: false, message: "ID inválido." }, { status: 400 });
@@ -75,17 +75,16 @@ export async function GET(
       );
     }
 
-    const member =
-      await prisma.member.findFirst({
-        where: {
-          id,
-          organizationId: organization.id,
-        },
-        include: {
-          directorate: true,
-          position: true,
-        },
-      });
+    const member = await prisma.member.findFirst({
+      where: {
+        id,
+        organizationId: organization.id,
+      },
+      include: {
+        directorate: true,
+        position: true,
+      },
+    });
 
     if (!member) {
       return NextResponse.json(
@@ -118,10 +117,7 @@ export async function GET(
   }
 }
 
-export async function PUT(
-  request: Request,
-  context: RouteContext
-) {
+export async function PUT(request: Request, context: RouteContext) {
   try {
     const params = routeIdSchema.safeParse(await context.params);
     if (!params.success) return NextResponse.json({ ok: false, message: "ID inválido." }, { status: 400 });
@@ -143,13 +139,12 @@ export async function PUT(
       );
     }
 
-    const existingMember =
-      await prisma.member.findFirst({
-        where: {
-          id,
-          organizationId: organization.id,
-        },
-      });
+    const existingMember = await prisma.member.findFirst({
+      where: {
+        id,
+        organizationId: organization.id,
+      },
+    });
 
     if (!existingMember) {
       return NextResponse.json(
@@ -167,8 +162,7 @@ export async function PUT(
     if (parsed.response) return parsed.response;
     const data = parsed.data!;
 
-    const fullName =
-      data.fullName?.toString().trim() || "";
+    const fullName = data.fullName?.toString().trim() || "";
 
     if (!fullName) {
       return NextResponse.json(
@@ -182,8 +176,7 @@ export async function PUT(
       );
     }
 
-    const status =
-      data.status || "ACTIVE";
+    const status = data.status || "ACTIVE";
 
     const memberWithCpf = await prisma.member.findFirst({
       where: { organizationId: organization.id, cpf: data.cpf, id: { not: existingMember.id } },
@@ -196,13 +189,12 @@ export async function PUT(
     let selectedDirectorate = null;
 
     if (data.directorateId) {
-      selectedDirectorate =
-        await prisma.directorate.findFirst({
-          where: {
-            id: data.directorateId,
-            organizationId: organization.id,
-          },
-        });
+      selectedDirectorate = await prisma.directorate.findFirst({
+        where: {
+          id: data.directorateId,
+          organizationId: organization.id,
+        },
+      });
 
       if (!selectedDirectorate) {
         return NextResponse.json(
@@ -220,13 +212,12 @@ export async function PUT(
     let selectedPosition = null;
 
     if (data.positionId) {
-      selectedPosition =
-        await prisma.position.findFirst({
-          where: {
-            id: data.positionId,
-            organizationId: organization.id,
-          },
-        });
+      selectedPosition = await prisma.position.findFirst({
+        where: {
+          id: data.positionId,
+          organizationId: organization.id,
+        },
+      });
 
       if (!selectedPosition) {
         return NextResponse.json(
@@ -241,8 +232,15 @@ export async function PUT(
       }
     }
 
-    if (status !== "POS_JR" && selectedPosition?.directorateId && selectedPosition.directorateId !== data.directorateId) {
-      return NextResponse.json({ ok: false, message: "O cargo não pertence à diretoria selecionada." }, { status: 400 });
+    if (
+      status !== "POS_JR" &&
+      selectedPosition?.directorateId &&
+      selectedPosition.directorateId !== data.directorateId
+    ) {
+      return NextResponse.json(
+        { ok: false, message: "O cargo não pertence à diretoria selecionada." },
+        { status: 400 }
+      );
     }
 
     /*
@@ -252,33 +250,26 @@ export async function PUT(
      * para que ele possa salvar seus
      * dados sem bloquear a si mesmo.
      */
-    if (
-      selectedPosition &&
-      status === "ACTIVE"
-    ) {
+    if (selectedPosition && status === "ACTIVE") {
       /*
        * PRESIDENTE
        */
-      if (
-        selectedPosition.role ===
-        "PRESIDENT"
-      ) {
-        const existingPresident =
-          await prisma.member.findFirst({
-            where: {
-              organizationId: organization.id,
-              id: {
-                not: existingMember.id,
-              },
-              status: "ACTIVE",
-              position: {
-                role: "PRESIDENT",
-              },
+      if (selectedPosition.role === "PRESIDENT") {
+        const existingPresident = await prisma.member.findFirst({
+          where: {
+            organizationId: organization.id,
+            id: {
+              not: existingMember.id,
             },
-            include: {
-              position: true,
+            status: "ACTIVE",
+            position: {
+              role: "PRESIDENT",
             },
-          });
+          },
+          include: {
+            position: true,
+          },
+        });
 
         if (existingPresident) {
           return NextResponse.json(
@@ -299,26 +290,22 @@ export async function PUT(
       /*
        * VICE-PRESIDENTE
        */
-      if (
-        selectedPosition.role ===
-        "VICE_PRESIDENT"
-      ) {
-        const existingVicePresident =
-          await prisma.member.findFirst({
-            where: {
-              organizationId: organization.id,
-              id: {
-                not: existingMember.id,
-              },
-              status: "ACTIVE",
-              position: {
-                role: "VICE_PRESIDENT",
-              },
+      if (selectedPosition.role === "VICE_PRESIDENT") {
+        const existingVicePresident = await prisma.member.findFirst({
+          where: {
+            organizationId: organization.id,
+            id: {
+              not: existingMember.id,
             },
-            include: {
-              position: true,
+            status: "ACTIVE",
+            position: {
+              role: "VICE_PRESIDENT",
             },
-          });
+          },
+          include: {
+            position: true,
+          },
+        });
 
         if (existingVicePresident) {
           return NextResponse.json(
@@ -342,10 +329,7 @@ export async function PUT(
        * Cada diretoria pode ter apenas
        * um Diretor ativo.
        */
-      if (
-        selectedPosition.role ===
-        "DIRECTOR"
-      ) {
+      if (selectedPosition.role === "DIRECTOR") {
         if (!selectedDirectorate) {
           return NextResponse.json(
             {
@@ -359,25 +343,23 @@ export async function PUT(
           );
         }
 
-        const existingDirector =
-          await prisma.member.findFirst({
-            where: {
-              organizationId: organization.id,
-              id: {
-                not: existingMember.id,
-              },
-              status: "ACTIVE",
-              directorateId:
-                selectedDirectorate.id,
-              position: {
-                role: "DIRECTOR",
-              },
+        const existingDirector = await prisma.member.findFirst({
+          where: {
+            organizationId: organization.id,
+            id: {
+              not: existingMember.id,
             },
-            include: {
-              directorate: true,
-              position: true,
+            status: "ACTIVE",
+            directorateId: selectedDirectorate.id,
+            position: {
+              role: "DIRECTOR",
             },
-          });
+          },
+          include: {
+            directorate: true,
+            position: true,
+          },
+        });
 
         if (existingDirector) {
           return NextResponse.json(
@@ -396,81 +378,60 @@ export async function PUT(
       }
     }
 
-    const member =
-      await updateMember({
-        where: {
-          id: existingMember.id, organizationId: organization.id,
-        },
-        data: {
-          fullName,
+    const member = await updateMember({
+      where: {
+        id: existingMember.id,
+        organizationId: organization.id,
+      },
+      data: {
+        fullName,
 
-          email:
-            data.email?.trim() || null,
+        email: data.email?.trim() || null,
 
-          cpf: data.cpf,
-          cpfNeedsReview: false,
+        cpf: data.cpf,
+        cpfNeedsReview: false,
 
-          phone:
-            data.phone?.trim() || null,
+        phone: data.phone?.trim() || null,
 
-          nationality:
-            data.nationality?.trim() || null,
+        nationality: data.nationality?.trim() || null,
 
-          maritalStatus:
-            data.maritalStatus?.trim() || null,
+        maritalStatus: data.maritalStatus?.trim() || null,
 
-          rg:
-            data.rg?.trim() || null,
+        rg: data.rg?.trim() || null,
 
-          rgIssuer:
-            data.rgIssuer?.trim() || null,
+        rgIssuer: data.rgIssuer?.trim() || null,
 
-          course:
-            data.course?.trim() || null,
+        course: data.course?.trim() || null,
 
-          registration:
-            data.registration?.trim() || null,
+        registration: data.registration?.trim() || null,
 
-          address:
-            data.address?.trim() || null,
+        address: data.address?.trim() || null,
 
-          addressNumber:
-            data.addressNumber?.trim() || null,
+        addressNumber: data.addressNumber?.trim() || null,
 
-          neighborhood:
-            data.neighborhood?.trim() || null,
+        neighborhood: data.neighborhood?.trim() || null,
 
-          cep:
-            data.cep?.trim() || null,
+        cep: data.cep?.trim() || null,
 
-          city:
-            data.city?.trim() || null,
+        city: data.city?.trim() || null,
 
-          state:
-            data.state?.trim() || null,
+        state: data.state?.trim() || null,
 
-          entryDate:
-            data.entryDate
-              ? new Date(data.entryDate)
-              : null,
+        entryDate: data.entryDate ? new Date(data.entryDate) : null,
 
-          exitDate:
-            data.exitDate
-              ? new Date(data.exitDate)
-              : null,
+        exitDate: data.exitDate ? new Date(data.exitDate) : null,
 
-          status,
+        status,
 
-          directorateId: data.directorateId || null,
+        directorateId: data.directorateId || null,
 
-          positionId:
-            data.positionId || null,
-        },
-        include: {
-          directorate: true,
-          position: true,
-        },
-      });
+        positionId: data.positionId || null,
+      },
+      include: {
+        directorate: true,
+        position: true,
+      },
+    });
 
     return NextResponse.json({
       ok: true,

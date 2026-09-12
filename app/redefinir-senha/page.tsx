@@ -1,1 +1,14 @@
-export default function ResetPasswordPage() { return <main className="mx-auto max-w-md space-y-5 p-8"><h1 className="text-2xl font-semibold">Redefinir senha</h1><p>O envio de links de recuperação depende da configuração de um serviço de e-mail e está temporariamente indisponível.</p><a className="block text-purple-700" href="/login">Ir para o login</a></main>; }
+export default function ResetPasswordPage() {
+  return (
+    <main className="mx-auto max-w-md space-y-5 p-8">
+      <h1 className="text-2xl font-semibold">Redefinir senha</h1>
+      <p>
+        O envio de links de recuperação depende da configuração de um serviço de e-mail e está temporariamente
+        indisponível.
+      </p>
+      <a className="block text-purple-700" href="/login">
+        Ir para o login
+      </a>
+    </main>
+  );
+}

@@ -68,10 +68,7 @@ export async function POST(request: Request) {
         contactName: data.contactName?.trim() || null,
         address: data.address?.trim() || null,
         notes: data.notes?.trim() || null,
-        active:
-          typeof data.active === "boolean"
-            ? data.active
-            : true,
+        active: typeof data.active === "boolean" ? data.active : true,
       },
     });
 

@@ -13,7 +13,8 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     const user = await updateOrganizationUser(auth.auth!.user.id, auth.auth!.profile.organizationId, id, parsed.data!);
     return NextResponse.json({ ok: true, user });
   } catch (error) {
-    if (error instanceof UserManagementError) return NextResponse.json({ ok: false, message: error.message }, { status: error.status });
+    if (error instanceof UserManagementError)
+      return NextResponse.json({ ok: false, message: error.message }, { status: error.status });
     return authErrorResponse(error) || internalErrorResponse();
   }
 }

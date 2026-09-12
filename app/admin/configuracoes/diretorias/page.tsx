@@ -50,9 +50,7 @@ export default function DiretoriasPage() {
       setSaving(true);
       setMessage("");
 
-      const url = editingId
-        ? `/api/directorates/${editingId}`
-        : "/api/directorates";
+      const url = editingId ? `/api/directorates/${editingId}` : "/api/directorates";
 
       const method = editingId ? "PUT" : "POST";
 
@@ -74,11 +72,7 @@ export default function DiretoriasPage() {
         return;
       }
 
-      setMessage(
-        editingId
-          ? "Diretoria atualizada com sucesso."
-          : "Diretoria cadastrada com sucesso."
-      );
+      setMessage(editingId ? "Diretoria atualizada com sucesso." : "Diretoria cadastrada com sucesso.");
 
       resetForm();
       await loadDirectorates();
@@ -99,20 +93,17 @@ export default function DiretoriasPage() {
 
   async function handleToggle(directorate: Directorate) {
     try {
-      const response = await fetch(
-        `/api/directorates/${directorate.id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            name: directorate.name,
-            description: directorate.description,
-            active: !directorate.active,
-          }),
-        }
-      );
+      const response = await fetch(`/api/directorates/${directorate.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: directorate.name,
+          description: directorate.description,
+          active: !directorate.active,
+        }),
+      });
 
       const data = await response.json();
 
@@ -129,19 +120,14 @@ export default function DiretoriasPage() {
   }
 
   async function handleDelete(directorate: Directorate) {
-    const confirmed = window.confirm(
-      `Deseja realmente excluir a diretoria "${directorate.name}"?`
-    );
+    const confirmed = window.confirm(`Deseja realmente excluir a diretoria "${directorate.name}"?`);
 
     if (!confirmed) return;
 
     try {
-      const response = await fetch(
-        `/api/directorates/${directorate.id}`,
-        {
-          method: "DELETE",
-        }
-      );
+      const response = await fetch(`/api/directorates/${directorate.id}`, {
+        method: "DELETE",
+      });
 
       const data = await response.json();
 
@@ -166,31 +152,20 @@ export default function DiretoriasPage() {
   return (
     <div className="max-w-5xl">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">
-          Diretorias
-        </h1>
+        <h1 className="text-2xl font-semibold text-gray-900">Diretorias</h1>
 
-        <p className="mt-1 text-sm text-gray-600">
-          Cadastre e gerencie as diretorias da organização.
-        </p>
+        <p className="mt-1 text-sm text-gray-600">Cadastre e gerencie as diretorias da organização.</p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
-        <form
-          onSubmit={handleSubmit}
-          className="h-fit rounded-lg border border-gray-200 bg-white"
-        >
+        <form onSubmit={handleSubmit} className="h-fit rounded-lg border border-gray-200 bg-white">
           <div className="border-b border-gray-200 px-5 py-4">
-            <h2 className="font-semibold text-gray-900">
-              {editingId ? "Editar diretoria" : "Nova diretoria"}
-            </h2>
+            <h2 className="font-semibold text-gray-900">{editingId ? "Editar diretoria" : "Nova diretoria"}</h2>
           </div>
 
           <div className="space-y-4 p-5">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Nome *
-              </label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Nome *</label>
 
               <input
                 type="text"
@@ -202,9 +177,7 @@ export default function DiretoriasPage() {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Descrição
-              </label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Descrição</label>
 
               <textarea
                 value={description}
@@ -214,11 +187,7 @@ export default function DiretoriasPage() {
               />
             </div>
 
-            {message && (
-              <p className="text-sm text-gray-700">
-                {message}
-              </p>
-            )}
+            {message && <p className="text-sm text-gray-700">{message}</p>}
 
             <div className="flex gap-2">
               {editingId && (
@@ -236,11 +205,7 @@ export default function DiretoriasPage() {
                 disabled={saving}
                 className="flex-1 rounded-md bg-[var(--admin-primary)] px-4 py-2 text-sm font-medium text-[var(--admin-on-primary)] hover:bg-[var(--admin-primary)] disabled:opacity-60"
               >
-                {saving
-                  ? "Salvando..."
-                  : editingId
-                  ? "Salvar alterações"
-                  : "Cadastrar diretoria"}
+                {saving ? "Salvando..." : editingId ? "Salvar alterações" : "Cadastrar diretoria"}
               </button>
             </div>
           </div>
@@ -248,40 +213,25 @@ export default function DiretoriasPage() {
 
         <section className="rounded-lg border border-gray-200 bg-white">
           <div className="border-b border-gray-200 px-5 py-4">
-            <h2 className="font-semibold text-gray-900">
-              Diretorias cadastradas
-            </h2>
+            <h2 className="font-semibold text-gray-900">Diretorias cadastradas</h2>
           </div>
 
           {loading ? (
-            <div className="p-5 text-sm text-gray-600">
-              Carregando...
-            </div>
+            <div className="p-5 text-sm text-gray-600">Carregando...</div>
           ) : directorates.length === 0 ? (
-            <div className="p-8 text-center text-sm text-gray-500">
-              Nenhuma diretoria cadastrada.
-            </div>
+            <div className="p-8 text-center text-sm text-gray-500">Nenhuma diretoria cadastrada.</div>
           ) : (
             <div className="divide-y divide-gray-200">
               {directorates.map((directorate) => (
-                <div
-                  key={directorate.id}
-                  className="flex items-start justify-between gap-4 px-5 py-4"
-                >
+                <div key={directorate.id} className="flex items-start justify-between gap-4 px-5 py-4">
                   <div>
-                    <p className="font-medium text-gray-900">
-                      {directorate.name}
-                    </p>
+                    <p className="font-medium text-gray-900">{directorate.name}</p>
 
-                    <p className="mt-1 text-sm text-gray-500">
-                      {directorate.description || "Sem descrição"}
-                    </p>
+                    <p className="mt-1 text-sm text-gray-500">{directorate.description || "Sem descrição"}</p>
 
                     <span
                       className={`mt-2 inline-block rounded-full px-2 py-1 text-xs font-medium ${
-                        directorate.active
-                          ? "bg-green-50 text-green-700"
-                          : "bg-gray-100 text-gray-600"
+                        directorate.active ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-600"
                       }`}
                     >
                       {directorate.active ? "Ativa" : "Inativa"}

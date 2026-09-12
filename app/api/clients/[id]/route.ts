@@ -11,10 +11,7 @@ type RouteContext = {
   }>;
 };
 
-export async function GET(
-  request: Request,
-  context: RouteContext
-) {
+export async function GET(request: Request, context: RouteContext) {
   try {
     const params = routeIdSchema.safeParse(await context.params);
     if (!params.success) return NextResponse.json({ ok: false, message: "ID inválido." }, { status: 400 });
@@ -68,10 +65,7 @@ export async function GET(
   }
 }
 
-export async function PUT(
-  request: Request,
-  context: RouteContext
-) {
+export async function PUT(request: Request, context: RouteContext) {
   try {
     const params = routeIdSchema.safeParse(await context.params);
     if (!params.success) return NextResponse.json({ ok: false, message: "ID inválido." }, { status: 400 });
@@ -135,10 +129,7 @@ export async function PUT(
         contactName: data.contactName?.trim() || null,
         address: data.address?.trim() || null,
         notes: data.notes?.trim() || null,
-        active:
-          typeof data.active === "boolean"
-            ? data.active
-            : existingClient.active,
+        active: typeof data.active === "boolean" ? data.active : existingClient.active,
       },
     });
 
@@ -159,10 +150,7 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  request: Request,
-  context: RouteContext
-) {
+export async function DELETE(request: Request, context: RouteContext) {
   try {
     const params = routeIdSchema.safeParse(await context.params);
     if (!params.success) return NextResponse.json({ ok: false, message: "ID inválido." }, { status: 400 });

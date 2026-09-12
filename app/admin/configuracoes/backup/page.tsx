@@ -7,11 +7,222 @@ type Settings = { destination: string; frequency: string; lastBackupAt: string |
 type Preview = { manifest: { createdAt: string; counts: Record<string, number> }; summary: Record<string, number> };
 
 export default function BackupPage() {
-  const [settings, setSettings] = useState<Settings>(null); const [automaticPending, setAutomaticPending] = useState(false); const [nextBackup, setNextBackup] = useState<string | null>(null); const [frequency, setFrequency] = useState("MANUAL"); const [file, setFile] = useState<File | null>(null); const [preview, setPreview] = useState<Preview | null>(null); const [message, setMessage] = useState(""); const [restoreText, setRestoreText] = useState("");
-  useEffect(() => { fetch("/api/backup").then((response) => response.json()).then((data) => { if (data.ok) { setSettings(data.settings); setFrequency(data.settings?.frequency || "MANUAL"); setAutomaticPending(Boolean(data.automaticPending)); setNextBackup(data.nextBackup); } }); }, []);
-  async function configure() { const response = await fetch("/api/backup", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ destination: "LOCAL", frequency }) }); const data = await response.json(); if (data.ok) { setSettings(data.settings); setAutomaticPending(frequency !== "MANUAL"); setMessage("Configuração de backup salva."); } else setMessage(data.message || "Não foi possível salvar."); }
-  async function exportBackup() { if (!window.confirm("Tem certeza que deseja gerar/exportar este backup?")) return; const response = await fetch("/api/backup/export", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ confirm: true }) }); if (!response.ok) { const data = await response.json(); setMessage(data.message || "Não foi possível gerar o backup."); return; } const url = URL.createObjectURL(await response.blob()); const link = document.createElement("a"); link.href = url; link.download = "backup.zip"; link.click(); URL.revokeObjectURL(url); setMessage("Backup exportado."); }
-  async function previewBackup() { if (!file) return; const form = new FormData(); form.set("file", file); form.set("action", "preview"); const response = await fetch("/api/backup/import", { method: "POST", body: form }); const data = await response.json(); if (data.ok) { setPreview(data); setMessage(""); } else setMessage(data.message || "Backup inválido."); }
-  async function apply(mode: "merge" | "restore") { if (!file || !preview) return; if (!window.confirm(mode === "restore" ? "Esta ação substituirá os dados atuais. Confirmar restauração completa?" : "Confirmar mesclagem deste backup?")) return; const form = new FormData(); form.set("file", file); form.set("action", mode); if (mode === "restore") form.set("confirmation", restoreText); const response = await fetch("/api/backup/import", { method: "POST", body: form }); const data = await response.json(); setMessage(data.ok ? `Concluído: ${data.result.inserted} inseridos e ${data.result.skipped} ignorados.` : data.message || "Não foi possível aplicar o backup."); }
-  return <div className="max-w-3xl space-y-6"><div><h1 className="text-2xl font-semibold">Backup</h1><p className="mt-1 text-sm text-gray-600">Exporte e restaure os dados desta organização com segurança.</p></div><section className="rounded-lg border bg-white p-5 text-sm"><h2 className="font-semibold">Status</h2><dl className="mt-3 grid gap-2 sm:grid-cols-2"><div><dt className="text-gray-500">Configuração</dt><dd>{settings ? "Configurado" : "Backup não configurado"}</dd></div><div><dt className="text-gray-500">Destino</dt><dd>{settings?.destination || "—"}</dd></div><div><dt className="text-gray-500">Frequência</dt><dd>{settings?.frequency || "—"}</dd></div><div><dt className="text-gray-500">Último backup</dt><dd>{settings?.lastBackupAt ? new Date(settings.lastBackupAt).toLocaleString("pt-BR") : "—"}</dd></div>{nextBackup && <div><dt className="text-gray-500">Próximo backup</dt><dd>{new Date(nextBackup).toLocaleString("pt-BR")}</dd></div>}</dl>{automaticPending && <p className="mt-3 text-amber-700">Backup automático pendente de executor externo.</p>}</section><section className="rounded-lg border bg-white p-5"><h2 className="font-semibold">Configurar backup</h2><p className="mt-1 text-sm text-gray-600">1. Tipo: local · 2. Destino: exportação manual · 3. Frequência · 4. Revisão · 5. Salvar.</p><label className="mt-4 block text-sm">Frequência<select value={frequency} onChange={(event) => setFrequency(event.target.value)} className="mt-1 block rounded border p-2"><option value="MANUAL">Desativado/manual</option><option value="DAILY">Diário</option><option value="WEEKLY">Semanal</option><option value="MONTHLY">Mensal</option></select></label><button onClick={configure} className="mt-3 rounded bg-[var(--admin-primary)] px-3 py-2 text-sm text-[var(--admin-on-primary)]">Salvar configuração</button></section><section className="rounded-lg border bg-white p-5"><h2 className="font-semibold">Backup manual</h2><div className="mt-3 flex flex-wrap gap-2"><button onClick={exportBackup} className="rounded bg-[var(--admin-primary)] px-3 py-2 text-sm text-[var(--admin-on-primary)]">Fazer backup agora</button><button onClick={exportBackup} className="rounded border px-3 py-2 text-sm">Exportar backup</button></div></section><section className="rounded-lg border bg-white p-5"><h2 className="font-semibold">Importar ou restaurar backup</h2><FileUploadField className="mt-3" action="Selecionar backup" hint="Clique para selecionar um arquivo ZIP" accept=".zip,application/zip" onChange={(event) => { setFile(event.target.files?.[0] || null); setPreview(null); }} /><button disabled={!file} onClick={previewBackup} className="mt-3 rounded border px-3 py-2 text-sm disabled:opacity-50">Validar e mostrar resumo</button>{preview && <div className="mt-4 rounded border p-3 text-sm"><p>Backup de {new Date(preview.manifest.createdAt).toLocaleString("pt-BR")}</p><p className="mt-2">{Object.entries(preview.summary).map(([key, value]) => `${key}: ${value}`).join(" · ")}</p><div className="mt-4 flex flex-wrap items-center gap-2"><button onClick={() => apply("merge")} className="rounded bg-[var(--admin-primary)] px-3 py-2 text-sm text-[var(--admin-on-primary)]">Mesclar backup</button><input value={restoreText} onChange={(event) => setRestoreText(event.target.value)} placeholder="Digite RESTAURAR" className="rounded border p-2 text-sm" /><button disabled={restoreText !== "RESTAURAR"} onClick={() => apply("restore")} className="rounded bg-red-700 px-3 py-2 text-sm text-white disabled:opacity-50">Restaurar tudo</button></div></div>}</section>{message && <p role="status" className="text-sm">{message}</p>}</div>;
+  const [settings, setSettings] = useState<Settings>(null);
+  const [automaticPending, setAutomaticPending] = useState(false);
+  const [nextBackup, setNextBackup] = useState<string | null>(null);
+  const [frequency, setFrequency] = useState("MANUAL");
+  const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<Preview | null>(null);
+  const [message, setMessage] = useState("");
+  const [restoreText, setRestoreText] = useState("");
+  useEffect(() => {
+    fetch("/api/backup")
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.ok) {
+          setSettings(data.settings);
+          setFrequency(data.settings?.frequency || "MANUAL");
+          setAutomaticPending(Boolean(data.automaticPending));
+          setNextBackup(data.nextBackup);
+        }
+      });
+  }, []);
+  async function configure() {
+    const response = await fetch("/api/backup", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ destination: "LOCAL", frequency }),
+    });
+    const data = await response.json();
+    if (data.ok) {
+      setSettings(data.settings);
+      setAutomaticPending(frequency !== "MANUAL");
+      setMessage("Configuração de backup salva.");
+    } else setMessage(data.message || "Não foi possível salvar.");
+  }
+  async function exportBackup() {
+    if (!window.confirm("Tem certeza que deseja gerar/exportar este backup?")) return;
+    const response = await fetch("/api/backup/export", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ confirm: true }),
+    });
+    if (!response.ok) {
+      const data = await response.json();
+      setMessage(data.message || "Não foi possível gerar o backup.");
+      return;
+    }
+    const url = URL.createObjectURL(await response.blob());
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "backup.zip";
+    link.click();
+    URL.revokeObjectURL(url);
+    setMessage("Backup exportado.");
+  }
+  async function previewBackup() {
+    if (!file) return;
+    const form = new FormData();
+    form.set("file", file);
+    form.set("action", "preview");
+    const response = await fetch("/api/backup/import", { method: "POST", body: form });
+    const data = await response.json();
+    if (data.ok) {
+      setPreview(data);
+      setMessage("");
+    } else setMessage(data.message || "Backup inválido.");
+  }
+  async function apply(mode: "merge" | "restore") {
+    if (!file || !preview) return;
+    if (
+      !window.confirm(
+        mode === "restore"
+          ? "Esta ação substituirá os dados atuais. Confirmar restauração completa?"
+          : "Confirmar mesclagem deste backup?"
+      )
+    )
+      return;
+    const form = new FormData();
+    form.set("file", file);
+    form.set("action", mode);
+    if (mode === "restore") form.set("confirmation", restoreText);
+    const response = await fetch("/api/backup/import", { method: "POST", body: form });
+    const data = await response.json();
+    setMessage(
+      data.ok
+        ? `Concluído: ${data.result.inserted} inseridos e ${data.result.skipped} ignorados.`
+        : data.message || "Não foi possível aplicar o backup."
+    );
+  }
+  return (
+    <div className="max-w-3xl space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold">Backup</h1>
+        <p className="mt-1 text-sm text-gray-600">Exporte e restaure os dados desta organização com segurança.</p>
+      </div>
+      <section className="rounded-lg border bg-white p-5 text-sm">
+        <h2 className="font-semibold">Status</h2>
+        <dl className="mt-3 grid gap-2 sm:grid-cols-2">
+          <div>
+            <dt className="text-gray-500">Configuração</dt>
+            <dd>{settings ? "Configurado" : "Backup não configurado"}</dd>
+          </div>
+          <div>
+            <dt className="text-gray-500">Destino</dt>
+            <dd>{settings?.destination || "—"}</dd>
+          </div>
+          <div>
+            <dt className="text-gray-500">Frequência</dt>
+            <dd>{settings?.frequency || "—"}</dd>
+          </div>
+          <div>
+            <dt className="text-gray-500">Último backup</dt>
+            <dd>{settings?.lastBackupAt ? new Date(settings.lastBackupAt).toLocaleString("pt-BR") : "—"}</dd>
+          </div>
+          {nextBackup && (
+            <div>
+              <dt className="text-gray-500">Próximo backup</dt>
+              <dd>{new Date(nextBackup).toLocaleString("pt-BR")}</dd>
+            </div>
+          )}
+        </dl>
+        {automaticPending && <p className="mt-3 text-amber-700">Backup automático pendente de executor externo.</p>}
+      </section>
+      <section className="rounded-lg border bg-white p-5">
+        <h2 className="font-semibold">Configurar backup</h2>
+        <p className="mt-1 text-sm text-gray-600">
+          1. Tipo: local · 2. Destino: exportação manual · 3. Frequência · 4. Revisão · 5. Salvar.
+        </p>
+        <label className="mt-4 block text-sm">
+          Frequência
+          <select
+            value={frequency}
+            onChange={(event) => setFrequency(event.target.value)}
+            className="mt-1 block rounded border p-2"
+          >
+            <option value="MANUAL">Desativado/manual</option>
+            <option value="DAILY">Diário</option>
+            <option value="WEEKLY">Semanal</option>
+            <option value="MONTHLY">Mensal</option>
+          </select>
+        </label>
+        <button
+          onClick={configure}
+          className="mt-3 rounded bg-[var(--admin-primary)] px-3 py-2 text-sm text-[var(--admin-on-primary)]"
+        >
+          Salvar configuração
+        </button>
+      </section>
+      <section className="rounded-lg border bg-white p-5">
+        <h2 className="font-semibold">Backup manual</h2>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button
+            onClick={exportBackup}
+            className="rounded bg-[var(--admin-primary)] px-3 py-2 text-sm text-[var(--admin-on-primary)]"
+          >
+            Fazer backup agora
+          </button>
+          <button onClick={exportBackup} className="rounded border px-3 py-2 text-sm">
+            Exportar backup
+          </button>
+        </div>
+      </section>
+      <section className="rounded-lg border bg-white p-5">
+        <h2 className="font-semibold">Importar ou restaurar backup</h2>
+        <FileUploadField
+          className="mt-3"
+          action="Selecionar backup"
+          hint="Clique para selecionar um arquivo ZIP"
+          accept=".zip,application/zip"
+          onChange={(event) => {
+            setFile(event.target.files?.[0] || null);
+            setPreview(null);
+          }}
+        />
+        <button
+          disabled={!file}
+          onClick={previewBackup}
+          className="mt-3 rounded border px-3 py-2 text-sm disabled:opacity-50"
+        >
+          Validar e mostrar resumo
+        </button>
+        {preview && (
+          <div className="mt-4 rounded border p-3 text-sm">
+            <p>Backup de {new Date(preview.manifest.createdAt).toLocaleString("pt-BR")}</p>
+            <p className="mt-2">
+              {Object.entries(preview.summary)
+                .map(([key, value]) => `${key}: ${value}`)
+                .join(" · ")}
+            </p>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => apply("merge")}
+                className="rounded bg-[var(--admin-primary)] px-3 py-2 text-sm text-[var(--admin-on-primary)]"
+              >
+                Mesclar backup
+              </button>
+              <input
+                value={restoreText}
+                onChange={(event) => setRestoreText(event.target.value)}
+                placeholder="Digite RESTAURAR"
+                className="rounded border p-2 text-sm"
+              />
+              <button
+                disabled={restoreText !== "RESTAURAR"}
+                onClick={() => apply("restore")}
+                className="rounded bg-red-700 px-3 py-2 text-sm text-white disabled:opacity-50"
+              >
+                Restaurar tudo
+              </button>
+            </div>
+          </div>
+        )}
+      </section>
+      {message && (
+        <p role="status" className="text-sm">
+          {message}
+        </p>
+      )}
+    </div>
+  );
 }

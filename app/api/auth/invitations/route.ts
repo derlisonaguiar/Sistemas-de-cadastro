@@ -35,15 +35,9 @@ export async function POST(request: Request) {
       select: { id: true, email: true, role: true, expiresAt: true },
     });
 
-    return NextResponse.json(
-      { ok: true, invitation, token },
-      { status: 201 }
-    );
+    return NextResponse.json({ ok: true, invitation, token }, { status: 201 });
   } catch (error) {
     console.error("Erro ao criar convite de acesso:", error);
-    return NextResponse.json(
-      { ok: false, message: "Erro ao criar convite de acesso." },
-      { status: 500 }
-    );
+    return NextResponse.json({ ok: false, message: "Erro ao criar convite de acesso." }, { status: 500 });
   }
 }

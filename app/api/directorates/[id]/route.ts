@@ -10,10 +10,7 @@ type RouteContext = {
   }>;
 };
 
-export async function PUT(
-  request: Request,
-  context: RouteContext
-) {
+export async function PUT(request: Request, context: RouteContext) {
   try {
     const params = routeIdSchema.safeParse(await context.params);
     if (!params.success) return NextResponse.json({ ok: false, message: "ID inválido." }, { status: 400 });
@@ -24,10 +21,7 @@ export async function PUT(
     const organization = authContext.auth!.organization;
 
     if (!organization) {
-      return NextResponse.json(
-        { ok: false, message: "Organização não encontrada." },
-        { status: 404 }
-      );
+      return NextResponse.json({ ok: false, message: "Organização não encontrada." }, { status: 404 });
     }
 
     const existingDirectorate = await prisma.directorate.findFirst({
@@ -38,10 +32,7 @@ export async function PUT(
     });
 
     if (!existingDirectorate) {
-      return NextResponse.json(
-        { ok: false, message: "Diretoria não encontrada." },
-        { status: 404 }
-      );
+      return NextResponse.json({ ok: false, message: "Diretoria não encontrada." }, { status: 404 });
     }
 
     const parsed = await parseJsonRequest(request, directorateSchema);
@@ -49,10 +40,7 @@ export async function PUT(
     const data = parsed.data!;
 
     if (!data.name || !data.name.trim()) {
-      return NextResponse.json(
-        { ok: false, message: "O nome da diretoria é obrigatório." },
-        { status: 400 }
-      );
+      return NextResponse.json({ ok: false, message: "O nome da diretoria é obrigatório." }, { status: 400 });
     }
 
     const directorate = await prisma.directorate.update({
@@ -62,10 +50,7 @@ export async function PUT(
       data: {
         name: data.name.trim(),
         description: data.description?.trim() || null,
-        active:
-          typeof data.active === "boolean"
-            ? data.active
-            : existingDirectorate.active,
+        active: typeof data.active === "boolean" ? data.active : existingDirectorate.active,
       },
     });
 
@@ -76,17 +61,11 @@ export async function PUT(
   } catch (error) {
     console.error("Erro ao atualizar diretoria:", error);
 
-    return NextResponse.json(
-      { ok: false, message: "Erro ao atualizar diretoria." },
-      { status: 500 }
-    );
+    return NextResponse.json({ ok: false, message: "Erro ao atualizar diretoria." }, { status: 500 });
   }
 }
 
-export async function DELETE(
-  request: Request,
-  context: RouteContext
-) {
+export async function DELETE(request: Request, context: RouteContext) {
   try {
     const params = routeIdSchema.safeParse(await context.params);
     if (!params.success) return NextResponse.json({ ok: false, message: "ID inválido." }, { status: 400 });
@@ -97,10 +76,7 @@ export async function DELETE(
     const organization = authContext.auth!.organization;
 
     if (!organization) {
-      return NextResponse.json(
-        { ok: false, message: "Organização não encontrada." },
-        { status: 404 }
-      );
+      return NextResponse.json({ ok: false, message: "Organização não encontrada." }, { status: 404 });
     }
 
     const directorate = await prisma.directorate.findFirst({
@@ -114,18 +90,14 @@ export async function DELETE(
     });
 
     if (!directorate) {
-      return NextResponse.json(
-        { ok: false, message: "Diretoria não encontrada." },
-        { status: 404 }
-      );
+      return NextResponse.json({ ok: false, message: "Diretoria não encontrada." }, { status: 404 });
     }
 
     if (directorate.members.length > 0) {
       return NextResponse.json(
         {
           ok: false,
-          message:
-            "Não é possível excluir uma diretoria que possui membros vinculados. Desative-a primeiro.",
+          message: "Não é possível excluir uma diretoria que possui membros vinculados. Desative-a primeiro.",
         },
         { status: 409 }
       );
@@ -144,9 +116,6 @@ export async function DELETE(
   } catch (error) {
     console.error("Erro ao excluir diretoria:", error);
 
-    return NextResponse.json(
-      { ok: false, message: "Erro ao excluir diretoria." },
-      { status: 500 }
-    );
+    return NextResponse.json({ ok: false, message: "Erro ao excluir diretoria." }, { status: 500 });
   }
 }

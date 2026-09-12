@@ -53,8 +53,14 @@ button {
 }
 
 @keyframes upload-feedback-in {
-  from { opacity: 0; transform: translateY(-2px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .upload-feedback {
@@ -62,6 +68,10 @@ button {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .file-upload-field { transition: none; }
-  .upload-feedback { animation: none; }
+  .file-upload-field {
+    transition: none;
+  }
+  .upload-feedback {
+    animation: none;
+  }
 }

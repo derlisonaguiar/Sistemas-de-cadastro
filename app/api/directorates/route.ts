@@ -27,10 +27,7 @@ export async function GET() {
   } catch (error) {
     console.error("Erro ao buscar diretorias:", error);
 
-    return NextResponse.json(
-      { ok: false, message: "Erro ao buscar diretorias." },
-      { status: 500 }
-    );
+    return NextResponse.json({ ok: false, message: "Erro ao buscar diretorias." }, { status: 500 });
   }
 }
 
@@ -45,10 +42,7 @@ export async function POST(request: Request) {
     const data = parsed.data!;
 
     if (!data.name || !data.name.trim()) {
-      return NextResponse.json(
-        { ok: false, message: "O nome da diretoria é obrigatório." },
-        { status: 400 }
-      );
+      return NextResponse.json({ ok: false, message: "O nome da diretoria é obrigatório." }, { status: 400 });
     }
 
     const directorate = await prisma.directorate.create({
@@ -66,9 +60,6 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Erro ao cadastrar diretoria:", error);
 
-    return NextResponse.json(
-      { ok: false, message: "Erro ao cadastrar diretoria." },
-      { status: 500 }
-    );
+    return NextResponse.json({ ok: false, message: "Erro ao cadastrar diretoria." }, { status: 500 });
   }
 }

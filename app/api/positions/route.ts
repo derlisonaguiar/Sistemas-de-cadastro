@@ -58,9 +58,13 @@ export async function POST(request: Request) {
       );
     }
 
-    if (data.directorateId && !await prisma.directorate.findFirst({
-      where: { id: data.directorateId, organizationId: organization.id }, select: { id: true },
-    })) {
+    if (
+      data.directorateId &&
+      !(await prisma.directorate.findFirst({
+        where: { id: data.directorateId, organizationId: organization.id },
+        select: { id: true },
+      }))
+    ) {
       return NextResponse.json({ ok: false, message: "Diretoria inválida para esta organização." }, { status: 400 });
     }
 

@@ -6,16 +6,23 @@ function normalizedHex(color: string) {
   const value = color.trim();
   if (/^#[\da-f]{6}$/i.test(value)) return value;
   if (/^#[\da-f]{3}$/i.test(value)) {
-    return `#${value.slice(1).split("").map(channel => channel + channel).join("")}`;
+    return `#${value
+      .slice(1)
+      .split("")
+      .map((channel) => channel + channel)
+      .join("")}`;
   }
   return null;
 }
 
 function luminance(hex: string) {
-  const channels = hex.replace("#", "").match(/.{2}/g)!.map(value => {
-    const channel = parseInt(value, 16) / 255;
-    return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
-  });
+  const channels = hex
+    .replace("#", "")
+    .match(/.{2}/g)!
+    .map((value) => {
+      const channel = parseInt(value, 16) / 255;
+      return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+    });
   return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
 }
 
@@ -30,7 +37,8 @@ export function adminThemeStyle({ primaryColor, secondaryColor }: OrganizationCo
   return {
     "--admin-primary": primaryHex ?? "var(--foreground)",
     "--admin-secondary": secondaryHex ?? "var(--background)",
-    "--admin-on-primary": contrast >= 4.5 ? secondaryHex ?? "var(--background)" : `rgb(${neutral} ${neutral} ${neutral})`,
+    "--admin-on-primary":
+      contrast >= 4.5 ? (secondaryHex ?? "var(--background)") : `rgb(${neutral} ${neutral} ${neutral})`,
   } as CSSProperties;
 }
 

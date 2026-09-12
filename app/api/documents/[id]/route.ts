@@ -14,10 +14,7 @@ type RouteContext = {
   }>;
 };
 
-export async function GET(
-  request: Request,
-  context: RouteContext
-) {
+export async function GET(request: Request, context: RouteContext) {
   try {
     const params = routeIdSchema.safeParse(await context.params);
     if (!params.success) return NextResponse.json({ ok: false, message: "ID inválido." }, { status: 400 });
@@ -87,10 +84,7 @@ export async function GET(
   }
 }
 
-export async function PUT(
-  request: Request,
-  context: RouteContext
-) {
+export async function PUT(request: Request, context: RouteContext) {
   try {
     const params = routeIdSchema.safeParse(await context.params);
     if (!params.success) return NextResponse.json({ ok: false, message: "ID inválido." }, { status: 400 });
@@ -134,7 +128,10 @@ export async function PUT(
     if (existingDocument.origin === "IMPORTED") {
       await validateDocumentLinks(prisma, organization.id, data);
       if (data.documentDate === "" || (data.status === "SIGNED" && !existingDocument.signedFile)) {
-        return NextResponse.json({ ok: false, message: "Informe a data real e envie o arquivo assinado antes de marcar como Assinado." }, { status: 400 });
+        return NextResponse.json(
+          { ok: false, message: "Informe a data real e envie o arquivo assinado antes de marcar como Assinado." },
+          { status: 400 }
+        );
       }
     }
 
@@ -174,10 +171,7 @@ export async function PUT(
     ]);
 
     if (relatedChecks.some((count) => count !== 1)) {
-      return NextResponse.json(
-        { ok: false, message: "Vínculo inválido para esta organização." },
-        { status: 400 }
-      );
+      return NextResponse.json({ ok: false, message: "Vínculo inválido para esta organização." }, { status: 400 });
     }
 
     const document = await prisma.document.update({
@@ -186,7 +180,9 @@ export async function PUT(
       },
       data: {
         title: data.title.trim(),
-        ...(data.documentDate !== undefined ? { documentDate: data.documentDate ? new Date(data.documentDate + "T00:00:00Z") : null } : {}),
+        ...(data.documentDate !== undefined
+          ? { documentDate: data.documentDate ? new Date(data.documentDate + "T00:00:00Z") : null }
+          : {}),
         ...(data.organizationDocument !== undefined ? { organizationDocument: data.organizationDocument } : {}),
         type: data.type,
         status: data.status || "DRAFT",
@@ -198,13 +194,9 @@ export async function PUT(
 
         description: data.description?.trim() || null,
 
-        issueDate: data.issueDate
-          ? new Date(data.issueDate)
-          : null,
+        issueDate: data.issueDate ? new Date(data.issueDate) : null,
 
-        signatureDate: data.signatureDate
-          ? new Date(data.signatureDate)
-          : null,
+        signatureDate: data.signatureDate ? new Date(data.signatureDate) : null,
       },
       include: {
         member: true,
@@ -221,7 +213,8 @@ export async function PUT(
   } catch (error) {
     console.error("Erro ao atualizar documento:", error);
 
-    if (error instanceof DocumentImportError) return NextResponse.json({ ok: false, message: error.message }, { status: error.status });
+    if (error instanceof DocumentImportError)
+      return NextResponse.json({ ok: false, message: error.message }, { status: error.status });
 
     return NextResponse.json(
       {
@@ -233,10 +226,7 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  request: Request,
-  context: RouteContext
-) {
+export async function DELETE(request: Request, context: RouteContext) {
   try {
     const params = routeIdSchema.safeParse(await context.params);
     if (!params.success) return NextResponse.json({ ok: false, message: "ID inválido." }, { status: 400 });

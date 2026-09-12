@@ -21,21 +21,13 @@ export async function parseJsonRequest<T>(request: Request, schema: ZodType<T>) 
 }
 
 export function internalErrorResponse() {
-  return NextResponse.json(
-    { ok: false, message: "Erro interno do servidor." },
-    { status: 500 }
-  );
+  return NextResponse.json({ ok: false, message: "Erro interno do servidor." }, { status: 500 });
 }
 
 export function databaseErrorResponse(error: unknown) {
-  const code = typeof error === "object" && error && "code" in error
-    ? String(error.code)
-    : "";
+  const code = typeof error === "object" && error && "code" in error ? String(error.code) : "";
   if (["P2002", "P2003", "P2004", "P2014"].includes(code)) {
-    return NextResponse.json(
-      { ok: false, message: "Conflito com dados ou regras existentes." },
-      { status: 409 }
-    );
+    return NextResponse.json({ ok: false, message: "Conflito com dados ou regras existentes." }, { status: 409 });
   }
   return internalErrorResponse();
 }

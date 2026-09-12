@@ -11,10 +11,7 @@ type RouteContext = {
   }>;
 };
 
-export async function GET(
-  request: Request,
-  context: RouteContext
-) {
+export async function GET(request: Request, context: RouteContext) {
   try {
     const params = routeIdSchema.safeParse(await context.params);
     if (!params.success) return NextResponse.json({ ok: false, message: "ID inválido." }, { status: 400 });
@@ -72,10 +69,7 @@ export async function GET(
   }
 }
 
-export async function PUT(
-  request: Request,
-  context: RouteContext
-) {
+export async function PUT(request: Request, context: RouteContext) {
   try {
     const params = routeIdSchema.safeParse(await context.params);
     if (!params.success) return NextResponse.json({ ok: false, message: "ID inválido." }, { status: 400 });
@@ -183,25 +177,15 @@ export async function PUT(
         clientId: data.clientId,
         projectId: data.projectId || null,
 
-        value:
-          data.value !== undefined &&
-          data.value !== null
-            ? data.value
-            : null,
+        value: data.value !== undefined && data.value !== null ? data.value : null,
 
-        startDate: data.startDate
-          ? new Date(data.startDate)
-          : null,
+        startDate: data.startDate ? new Date(data.startDate) : null,
 
-        endDate: data.endDate
-          ? new Date(data.endDate)
-          : null,
+        endDate: data.endDate ? new Date(data.endDate) : null,
 
         status: data.status || "DRAFT",
 
-        signatureDate: data.signatureDate
-          ? new Date(data.signatureDate)
-          : null,
+        signatureDate: data.signatureDate ? new Date(data.signatureDate) : null,
 
         notes: data.notes?.trim() || null,
       },
@@ -228,10 +212,7 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  request: Request,
-  context: RouteContext
-) {
+export async function DELETE(request: Request, context: RouteContext) {
   try {
     const params = routeIdSchema.safeParse(await context.params);
     if (!params.success) return NextResponse.json({ ok: false, message: "ID inválido." }, { status: 400 });

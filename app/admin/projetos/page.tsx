@@ -51,23 +51,20 @@ function formatCurrency(value: string | null) {
 
 export default function ProjetosPage() {
   const [projects, setProjects] = useState<Project[]>([]);
-  const [organization, setOrganization] =
-    useState<Organization | null>(null);
+  const [organization, setOrganization] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
     async function loadData() {
       try {
-        const [projectsResponse, organizationResponse] =
-          await Promise.all([
-            fetch("/api/projects"),
-            fetch("/api/organization"),
-          ]);
+        const [projectsResponse, organizationResponse] = await Promise.all([
+          fetch("/api/projects"),
+          fetch("/api/organization"),
+        ]);
 
         const projectsData = await projectsResponse.json();
-        const organizationData =
-          await organizationResponse.json();
+        const organizationData = await organizationResponse.json();
 
         if (projectsData.ok) {
           setProjects(projectsData.projects);
@@ -103,22 +100,20 @@ export default function ProjetosPage() {
     <div className="max-w-6xl">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">
-            Projetos
-          </h1>
+          <h1 className="text-2xl font-semibold text-gray-900">Projetos</h1>
 
-          <p className="mt-1 text-sm text-gray-600">
-            Gerencie os projetos da organização.
-          </p>
+          <p className="mt-1 text-sm text-gray-600">Gerencie os projetos da organização.</p>
         </div>
 
-        <AdminOnly><Link
-          href="/admin/projetos/novo"
-          style={{ backgroundColor: primaryColor }}
-          className="rounded-md px-4 py-2 text-sm font-medium text-white"
-        >
-          + Novo projeto
-        </Link></AdminOnly>
+        <AdminOnly>
+          <Link
+            href="/admin/projetos/novo"
+            style={{ backgroundColor: primaryColor }}
+            className="rounded-md px-4 py-2 text-sm font-medium text-white"
+          >
+            + Novo projeto
+          </Link>
+        </AdminOnly>
       </div>
 
       <div className="mb-4">
@@ -133,37 +128,23 @@ export default function ProjetosPage() {
 
       <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
         {loading ? (
-          <div className="p-6 text-sm text-gray-600">
-            Carregando projetos...
-          </div>
+          <div className="p-6 text-sm text-gray-600">Carregando projetos...</div>
         ) : filteredProjects.length === 0 ? (
-          <div className="p-8 text-center text-sm text-gray-500">
-            Nenhum projeto encontrado.
-          </div>
+          <div className="p-8 text-center text-sm text-gray-500">Nenhum projeto encontrado.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="border-b border-gray-200 bg-gray-50">
                 <tr>
-                  <th className="px-5 py-3 font-medium text-gray-600">
-                    Projeto
-                  </th>
+                  <th className="px-5 py-3 font-medium text-gray-600">Projeto</th>
 
-                  <th className="px-5 py-3 font-medium text-gray-600">
-                    Cliente
-                  </th>
+                  <th className="px-5 py-3 font-medium text-gray-600">Cliente</th>
 
-                  <th className="px-5 py-3 font-medium text-gray-600">
-                    Orçamento
-                  </th>
+                  <th className="px-5 py-3 font-medium text-gray-600">Orçamento</th>
 
-                  <th className="px-5 py-3 font-medium text-gray-600">
-                    Status
-                  </th>
+                  <th className="px-5 py-3 font-medium text-gray-600">Status</th>
 
-                  <th className="px-5 py-3 font-medium text-gray-600">
-                    Ações
-                  </th>
+                  <th className="px-5 py-3 font-medium text-gray-600">Ações</th>
                 </tr>
               </thead>
 
@@ -171,22 +152,16 @@ export default function ProjetosPage() {
                 {filteredProjects.map((project) => (
                   <tr key={project.id}>
                     <td className="px-5 py-4">
-                      <p className="font-medium text-gray-900">
-                        {project.name}
-                      </p>
+                      <p className="font-medium text-gray-900">{project.name}</p>
 
                       <p className="mt-1 max-w-xs truncate text-xs text-gray-500">
                         {project.description || "Sem descrição"}
                       </p>
                     </td>
 
-                    <td className="px-5 py-4 text-gray-700">
-                      {project.client?.name || "Sem cliente"}
-                    </td>
+                    <td className="px-5 py-4 text-gray-700">{project.client?.name || "Sem cliente"}</td>
 
-                    <td className="px-5 py-4 text-gray-700">
-                      {formatCurrency(project.budget)}
-                    </td>
+                    <td className="px-5 py-4 text-gray-700">{formatCurrency(project.budget)}</td>
 
                     <td className="px-5 py-4">
                       <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700">

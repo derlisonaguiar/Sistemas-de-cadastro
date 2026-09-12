@@ -21,67 +21,62 @@ export async function GET() {
       );
     }
 
-    const templates =
-      await prisma.documentTemplate.findMany({
-        where: {
-          organizationId: organization.id,
-          renderMode: { not: "VISUAL_CERTIFICATE" },
-        },
-        select: {
-          id: true,
-          name: true,
-          description: true,
-          type: true,
-          active: true,
-          sourceType: true,
-          renderMode: true,
-          processingStatus: true,
-          originalFileName: true,
-          originalFileUrl: true,
-          createdAt: true,
-          updatedAt: true,
-          fields: {
-            select: {
-              id: true,
-              key: true,
-              label: true,
-              type: true,
-              mappedPath: true,
-              required: true,
-              confidence: true,
-            },
-            orderBy: {
-              createdAt: "asc",
-            },
+    const templates = await prisma.documentTemplate.findMany({
+      where: {
+        organizationId: organization.id,
+        renderMode: { not: "VISUAL_CERTIFICATE" },
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        type: true,
+        active: true,
+        sourceType: true,
+        renderMode: true,
+        processingStatus: true,
+        originalFileName: true,
+        originalFileUrl: true,
+        createdAt: true,
+        updatedAt: true,
+        fields: {
+          select: {
+            id: true,
+            key: true,
+            label: true,
+            type: true,
+            mappedPath: true,
+            required: true,
+            confidence: true,
+          },
+          orderBy: {
+            createdAt: "asc",
           },
         },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
 
-    const safeTemplates = await Promise.all(templates.map(async (template) => ({
-      ...template,
-      originalFileUrl: template.originalFileUrl
-        ? await createSignedStorageUrl(template.originalFileUrl)
-        : null,
-    })));
+    const safeTemplates = await Promise.all(
+      templates.map(async (template) => ({
+        ...template,
+        originalFileUrl: template.originalFileUrl ? await createSignedStorageUrl(template.originalFileUrl) : null,
+      }))
+    );
 
     return NextResponse.json({
       ok: true,
       templates: safeTemplates,
     });
   } catch (error) {
-    console.error(
-      "Erro ao buscar modelos de documento:",
-      error
-    );
+    console.error("Erro ao buscar modelos de documento:", error);
 
     return NextResponse.json(
       {
         ok: false,
-        message:
-          "Erro ao buscar modelos de documento.",
+        message: "Erro ao buscar modelos de documento.",
       },
       {
         status: 500,

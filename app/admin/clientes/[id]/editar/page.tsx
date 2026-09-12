@@ -61,10 +61,7 @@ export default function EditarClientePage() {
     }
   }, [id]);
 
-  function updateField(
-    field: string,
-    value: string | boolean
-  ) {
+  function updateField(field: string, value: string | boolean) {
     setForm((current) => ({
       ...current,
       [field]: value,
@@ -103,38 +100,26 @@ export default function EditarClientePage() {
   }
 
   if (loading) {
-    return (
-      <div className="text-sm text-gray-600">
-        Carregando cliente...
-      </div>
-    );
+    return <div className="text-sm text-gray-600">Carregando cliente...</div>;
   }
 
   return (
     <div className="max-w-4xl">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">
-          Editar cliente
-        </h1>
+        <h1 className="text-2xl font-semibold text-gray-900">Editar cliente</h1>
 
-        <p className="mt-1 text-sm text-gray-600">
-          Atualize as informações do cliente.
-        </p>
+        <p className="mt-1 text-sm text-gray-600">Atualize as informações do cliente.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <section className="rounded-lg border border-gray-200 bg-white">
           <div className="border-b border-gray-200 px-5 py-4">
-            <h2 className="font-semibold text-gray-900">
-              Dados do cliente
-            </h2>
+            <h2 className="font-semibold text-gray-900">Dados do cliente</h2>
           </div>
 
           <div className="grid gap-4 p-5 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Nome *
-              </label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Nome *</label>
 
               <input
                 type="text"
@@ -146,54 +131,40 @@ export default function EditarClientePage() {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Razão social / Empresa
-              </label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Razão social / Empresa</label>
 
               <input
                 type="text"
                 value={form.companyName}
-                onChange={(e) =>
-                  updateField("companyName", e.target.value)
-                }
+                onChange={(e) => updateField("companyName", e.target.value)}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                CPF / CNPJ
-              </label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">CPF / CNPJ</label>
 
               <input
                 type="text"
                 value={form.cpfCnpj}
-                onChange={(e) =>
-                  updateField("cpfCnpj", e.target.value)
-                }
+                onChange={(e) => updateField("cpfCnpj", e.target.value)}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Pessoa de contato
-              </label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Pessoa de contato</label>
 
               <input
                 type="text"
                 value={form.contactName}
-                onChange={(e) =>
-                  updateField("contactName", e.target.value)
-                }
+                onChange={(e) => updateField("contactName", e.target.value)}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                E-mail
-              </label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">E-mail</label>
 
               <input
                 type="email"
@@ -204,9 +175,7 @@ export default function EditarClientePage() {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Telefone
-              </label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Telefone</label>
 
               <input
                 type="text"
@@ -217,24 +186,18 @@ export default function EditarClientePage() {
             </div>
 
             <div className="md:col-span-2">
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Endereço
-              </label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Endereço</label>
 
               <input
                 type="text"
                 value={form.address}
-                onChange={(e) =>
-                  updateField("address", e.target.value)
-                }
+                onChange={(e) => updateField("address", e.target.value)}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
               />
             </div>
 
             <div className="md:col-span-2">
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Observações
-              </label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Observações</label>
 
               <textarea
                 value={form.notes}
@@ -247,17 +210,13 @@ export default function EditarClientePage() {
         </section>
 
         {message && (
-          <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {message}
-          </div>
+          <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{message}</div>
         )}
 
         <div className="flex justify-end gap-3">
           <button
             type="button"
-            onClick={() =>
-              router.push(`/admin/clientes/${id}`)
-            }
+            onClick={() => router.push(`/admin/clientes/${id}`)}
             className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
             Cancelar

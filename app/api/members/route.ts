@@ -7,7 +7,8 @@ import { databaseErrorResponse, parseJsonRequest } from "@/lib/api";
 import { memberSchema } from "@/lib/validation";
 
 function isCpfConflict(error: unknown) {
-  if (typeof error !== "object" || !error || !("code" in error) || error.code !== "P2002" || !("meta" in error)) return false;
+  if (typeof error !== "object" || !error || !("code" in error) || error.code !== "P2002" || !("meta" in error))
+    return false;
   const target = (error.meta as { target?: unknown })?.target;
   return Array.isArray(target) && target.includes("cpf");
 }
@@ -154,8 +155,15 @@ export async function POST(request: Request) {
       }
     }
 
-    if (status !== "POS_JR" && selectedPosition?.directorateId && selectedPosition.directorateId !== data.directorateId) {
-      return NextResponse.json({ ok: false, message: "O cargo não pertence à diretoria selecionada." }, { status: 400 });
+    if (
+      status !== "POS_JR" &&
+      selectedPosition?.directorateId &&
+      selectedPosition.directorateId !== data.directorateId
+    ) {
+      return NextResponse.json(
+        { ok: false, message: "O cargo não pertence à diretoria selecionada." },
+        { status: 400 }
+      );
     }
 
     /*
@@ -239,8 +247,7 @@ export async function POST(request: Request) {
           return NextResponse.json(
             {
               ok: false,
-              message:
-                "Não foi possível cadastrar este membro. Um Diretor precisa estar vinculado a uma diretoria.",
+              message: "Não foi possível cadastrar este membro. Um Diretor precisa estar vinculado a uma diretoria.",
             },
             {
               status: 400,
@@ -306,13 +313,9 @@ export async function POST(request: Request) {
         city: data.city?.trim() || null,
         state: data.state?.trim() || null,
 
-        entryDate: data.entryDate
-          ? new Date(data.entryDate)
-          : null,
+        entryDate: data.entryDate ? new Date(data.entryDate) : null,
 
-        exitDate: data.exitDate
-          ? new Date(data.exitDate)
-          : null,
+        exitDate: data.exitDate ? new Date(data.exitDate) : null,
 
         status,
 

@@ -24,9 +24,13 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const where = { id: params.data.id, organizationId };
     const document = await prisma.document.findFirst({ where });
     if (!document) return NextResponse.json({ ok: false }, { status: 404 });
-    if (document.signedFile) return NextResponse.json({ ok: false, message: "Documento assinado já enviado." }, { status: 409 });
+    if (document.signedFile)
+      return NextResponse.json({ ok: false, message: "Documento assinado já enviado." }, { status: 409 });
     if (!document.generatedDocxUrl && !document.generatedPdfUrl && !document.fileUrl) {
-      return NextResponse.json({ ok: false, message: "O documento precisa possuir um arquivo original." }, { status: 400 });
+      return NextResponse.json(
+        { ok: false, message: "O documento precisa possuir um arquivo original." },
+        { status: 400 }
+      );
     }
     let buffer: Buffer;
     try {
@@ -38,9 +42,16 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       const pdf = await PDFDocument.load(buffer);
       if (!pdf.getPageCount()) throw new Error("EMPTY");
     } catch {
-      return NextResponse.json({ ok: false, message: "Envie um PDF válido, não criptografado, de até 10 MB." }, { status: 400 });
+      return NextResponse.json(
+        { ok: false, message: "Envie um PDF válido, não criptografado, de até 10 MB." },
+        { status: 400 }
+      );
     }
-    uploaded = await uploadPrivateObject(`organizations/${organizationId}/documents/${document.id}/signed/${randomUUID()}.pdf`, buffer, "application/pdf");
+    uploaded = await uploadPrivateObject(
+      `organizations/${organizationId}/documents/${document.id}/signed/${randomUUID()}.pdf`,
+      buffer,
+      "application/pdf"
+    );
     // Conditional update prevents concurrent uploads from replacing the first signed file.
     const result = await prisma.document.updateMany({
       where: { ...where, signedFile: null },
@@ -49,7 +60,10 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     if (!result.count) {
       await removeStorageObject(uploaded);
       uploaded = null;
-      return NextResponse.json({ ok: false, message: "Documento alterado durante o envio. Recarregue a página." }, { status: 409 });
+      return NextResponse.json(
+        { ok: false, message: "Documento alterado durante o envio. Recarregue a página." },
+        { status: 409 }
+      );
     }
     uploaded = null;
     return NextResponse.json({ ok: true }, { status: 201 });

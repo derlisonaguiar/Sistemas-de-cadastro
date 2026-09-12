@@ -69,20 +69,19 @@ export async function GET(
     if (!params.success) return NextResponse.json({ ok: false, message: "ID inválido." }, { status: 400 });
     const { id } = params.data;
 
-    const template =
-      await prisma.documentTemplate.findFirst({
-        where: {
-          id,
-          organizationId,
-        },
-        include: {
-          fields: {
-            orderBy: {
-              createdAt: "asc",
-            },
+    const template = await prisma.documentTemplate.findFirst({
+      where: {
+        id,
+        organizationId,
+      },
+      include: {
+        fields: {
+          orderBy: {
+            createdAt: "asc",
           },
         },
-      });
+      },
+    });
 
     if (!template) {
       return NextResponse.json(
@@ -100,22 +99,16 @@ export async function GET(
       ok: true,
       template: {
         ...template,
-        originalFileUrl: template.originalFileUrl
-          ? await createSignedStorageUrl(template.originalFileUrl)
-          : null,
+        originalFileUrl: template.originalFileUrl ? await createSignedStorageUrl(template.originalFileUrl) : null,
       },
     });
   } catch (error) {
-    console.error(
-      "Erro ao buscar modelo de documento:",
-      error
-    );
+    console.error("Erro ao buscar modelo de documento:", error);
 
     return NextResponse.json(
       {
         ok: false,
-        message:
-          "Erro ao buscar modelo de documento.",
+        message: "Erro ao buscar modelo de documento.",
       },
       {
         status: 500,
@@ -148,8 +141,7 @@ export async function PUT(
       return NextResponse.json(
         {
           ok: false,
-          message:
-            "Campo do modelo não informado.",
+          message: "Campo do modelo não informado.",
         },
         {
           status: 400,
@@ -157,20 +149,18 @@ export async function PUT(
       );
     }
 
-    const template =
-      await prisma.documentTemplate.findFirst({
-        where: {
-          id,
-          organizationId,
-        },
-      });
+    const template = await prisma.documentTemplate.findFirst({
+      where: {
+        id,
+        organizationId,
+      },
+    });
 
     if (!template) {
       return NextResponse.json(
         {
           ok: false,
-          message:
-            "Modelo não encontrado.",
+          message: "Modelo não encontrado.",
         },
         {
           status: 404,
@@ -178,20 +168,18 @@ export async function PUT(
       );
     }
 
-    const field =
-      await prisma.documentTemplateField.findFirst({
-        where: {
-          id: fieldId,
-          templateId: id,
-        },
-      });
+    const field = await prisma.documentTemplateField.findFirst({
+      where: {
+        id: fieldId,
+        templateId: id,
+      },
+    });
 
     if (!field) {
       return NextResponse.json(
         {
           ok: false,
-          message:
-            "Campo do modelo não encontrado.",
+          message: "Campo do modelo não encontrado.",
         },
         {
           status: 404,
@@ -208,15 +196,13 @@ export async function PUT(
     } = {};
 
     if (body.label !== undefined) {
-      const label =
-        body.label?.toString().trim() || "";
+      const label = body.label?.toString().trim() || "";
 
       if (!label) {
         return NextResponse.json(
           {
             ok: false,
-            message:
-              "O nome do campo não pode ficar vazio.",
+            message: "O nome do campo não pode ficar vazio.",
           },
           {
             status: 400,
@@ -232,22 +218,17 @@ export async function PUT(
     }
 
     if (body.required !== undefined) {
-      updateData.required =
-        Boolean(body.required);
+      updateData.required = Boolean(body.required);
     }
 
     if (body.mappedPath !== undefined) {
-      const mappedPath =
-        body.mappedPath?.toString() || "";
+      const mappedPath = body.mappedPath?.toString() || "";
 
-      if (
-        !allowedMappedPaths.includes(mappedPath)
-      ) {
+      if (!allowedMappedPaths.includes(mappedPath)) {
         return NextResponse.json(
           {
             ok: false,
-            message:
-              "Fonte de dados inválida.",
+            message: "Fonte de dados inválida.",
           },
           {
             status: 400,
@@ -255,19 +236,17 @@ export async function PUT(
         );
       }
 
-      updateData.mappedPath =
-        mappedPath || null;
+      updateData.mappedPath = mappedPath || null;
     }
 
     updateData.confirmed = true;
 
-    const updatedField =
-      await prisma.documentTemplateField.update({
-        where: {
-          id: field.id,
-        },
-        data: updateData,
-      });
+    const updatedField = await prisma.documentTemplateField.update({
+      where: {
+        id: field.id,
+      },
+      data: updateData,
+    });
 
     const pendingFields = await prisma.documentTemplateField.count({
       where: { templateId: id, OR: [{ confirmed: false }, { mappedPath: null }] },
@@ -282,21 +261,16 @@ export async function PUT(
 
     return NextResponse.json({
       ok: true,
-      message:
-        "Campo atualizado com sucesso.",
+      message: "Campo atualizado com sucesso.",
       field: updatedField,
     });
   } catch (error) {
-    console.error(
-      "Erro ao atualizar campo do modelo:",
-      error
-    );
+    console.error("Erro ao atualizar campo do modelo:", error);
 
     return NextResponse.json(
       {
         ok: false,
-        message:
-          "Erro ao atualizar campo do modelo.",
+        message: "Erro ao atualizar campo do modelo.",
       },
       {
         status: 500,
@@ -321,27 +295,25 @@ export async function DELETE(
     if (!params.success) return NextResponse.json({ ok: false, message: "ID inválido." }, { status: 400 });
     const { id } = params.data;
 
-    const template =
-      await prisma.documentTemplate.findFirst({
-        where: {
-          id,
-          organizationId,
-        },
-        include: {
-          documents: {
-            select: {
-              id: true,
-            },
+    const template = await prisma.documentTemplate.findFirst({
+      where: {
+        id,
+        organizationId,
+      },
+      include: {
+        documents: {
+          select: {
+            id: true,
           },
         },
-      });
+      },
+    });
 
     if (!template) {
       return NextResponse.json(
         {
           ok: false,
-          message:
-            "Modelo não encontrado.",
+          message: "Modelo não encontrado.",
         },
         {
           status: 404,
@@ -383,31 +355,22 @@ export async function DELETE(
           await fs.unlink(absolutePath);
         }
       } catch (fileError) {
-        console.warn(
-          "Modelo excluído do banco, mas não foi possível remover o arquivo físico:",
-          fileError
-        );
+        console.warn("Modelo excluído do banco, mas não foi possível remover o arquivo físico:", fileError);
       }
     }
 
     return NextResponse.json({
       ok: true,
-      message:
-        "Modelo excluído com sucesso.",
-      linkedDocuments:
-        template.documents.length,
+      message: "Modelo excluído com sucesso.",
+      linkedDocuments: template.documents.length,
     });
   } catch (error) {
-    console.error(
-      "Erro ao excluir modelo de documento:",
-      error
-    );
+    console.error("Erro ao excluir modelo de documento:", error);
 
     return NextResponse.json(
       {
         ok: false,
-        message:
-          "Erro ao excluir modelo de documento.",
+        message: "Erro ao excluir modelo de documento.",
       },
       {
         status: 500,

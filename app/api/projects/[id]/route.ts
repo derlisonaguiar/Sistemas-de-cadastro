@@ -11,10 +11,7 @@ type RouteContext = {
   }>;
 };
 
-export async function GET(
-  request: Request,
-  context: RouteContext
-) {
+export async function GET(request: Request, context: RouteContext) {
   try {
     const params = routeIdSchema.safeParse(await context.params);
     if (!params.success) return NextResponse.json({ ok: false, message: "ID inválido." }, { status: 400 });
@@ -71,10 +68,7 @@ export async function GET(
   }
 }
 
-export async function PUT(
-  request: Request,
-  context: RouteContext
-) {
+export async function PUT(request: Request, context: RouteContext) {
   try {
     const params = routeIdSchema.safeParse(await context.params);
     if (!params.success) return NextResponse.json({ ok: false, message: "ID inválido." }, { status: 400 });
@@ -152,18 +146,10 @@ export async function PUT(
         name: data.name.trim(),
         description: data.description?.trim() || null,
         clientId: data.clientId || null,
-        startDate: data.startDate
-          ? new Date(data.startDate)
-          : null,
-        endDate: data.endDate
-          ? new Date(data.endDate)
-          : null,
+        startDate: data.startDate ? new Date(data.startDate) : null,
+        endDate: data.endDate ? new Date(data.endDate) : null,
         status: data.status || "PLANNING",
-        budget:
-          data.budget !== undefined &&
-          data.budget !== null
-            ? data.budget
-            : null,
+        budget: data.budget !== undefined && data.budget !== null ? data.budget : null,
       },
       include: {
         client: true,
@@ -187,10 +173,7 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  request: Request,
-  context: RouteContext
-) {
+export async function DELETE(request: Request, context: RouteContext) {
   try {
     const params = routeIdSchema.safeParse(await context.params);
     if (!params.success) return NextResponse.json({ ok: false, message: "ID inválido." }, { status: 400 });

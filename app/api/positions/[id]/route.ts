@@ -11,10 +11,7 @@ type RouteContext = {
   }>;
 };
 
-export async function PUT(
-  request: Request,
-  context: RouteContext
-) {
+export async function PUT(request: Request, context: RouteContext) {
   try {
     const params = routeIdSchema.safeParse(await context.params);
     if (!params.success) return NextResponse.json({ ok: false, message: "ID inválido." }, { status: 400 });
@@ -65,9 +62,13 @@ export async function PUT(
       );
     }
 
-    if (data.directorateId && !await prisma.directorate.findFirst({
-      where: { id: data.directorateId, organizationId: organization.id }, select: { id: true },
-    })) {
+    if (
+      data.directorateId &&
+      !(await prisma.directorate.findFirst({
+        where: { id: data.directorateId, organizationId: organization.id },
+        select: { id: true },
+      }))
+    ) {
       return NextResponse.json({ ok: false, message: "Diretoria inválida para esta organização." }, { status: 400 });
     }
 
@@ -82,10 +83,7 @@ export async function PUT(
         description: data.description?.trim() || null,
         role,
         directorateId: data.directorateId === undefined ? existingPosition.directorateId : data.directorateId,
-        active:
-          typeof data.active === "boolean"
-            ? data.active
-            : existingPosition.active,
+        active: typeof data.active === "boolean" ? data.active : existingPosition.active,
       },
     });
 
@@ -100,10 +98,7 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  request: Request,
-  context: RouteContext
-) {
+export async function DELETE(request: Request, context: RouteContext) {
   try {
     const params = routeIdSchema.safeParse(await context.params);
     if (!params.success) return NextResponse.json({ ok: false, message: "ID inválido." }, { status: 400 });

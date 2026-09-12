@@ -5,7 +5,9 @@ import { PDFParse } from "pdf-parse";
 import { validateDocx, validatePdf } from "../lib/file-security.ts";
 
 const docxMime = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-function file(name: string, type: string, data: Buffer) { return new File([new Uint8Array(data)], name, { type }); }
+function file(name: string, type: string, data: Buffer) {
+  return new File([new Uint8Array(data)], name, { type });
+}
 function docx(extra?: (zip: PizZip) => void) {
   const zip = new PizZip();
   zip.file("[Content_Types].xml", "<Types/>");
@@ -54,7 +56,10 @@ function textualPdf() {
   ];
   let body = "%PDF-1.4\n";
   const offsets = [0];
-  objects.forEach((object, index) => { offsets.push(Buffer.byteLength(body)); body += `${index + 1} 0 obj\n${object}\nendobj\n`; });
+  objects.forEach((object, index) => {
+    offsets.push(Buffer.byteLength(body));
+    body += `${index + 1} 0 obj\n${object}\nendobj\n`;
+  });
   const xref = Buffer.byteLength(body);
   body += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
   for (const offset of offsets.slice(1)) body += `${String(offset).padStart(10, "0")} 00000 n \n`;

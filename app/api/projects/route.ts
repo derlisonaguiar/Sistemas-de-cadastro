@@ -87,21 +87,13 @@ export async function POST(request: Request) {
         name: data.name.trim(),
         description: data.description?.trim() || null,
 
-        startDate: data.startDate
-          ? new Date(data.startDate)
-          : null,
+        startDate: data.startDate ? new Date(data.startDate) : null,
 
-        endDate: data.endDate
-          ? new Date(data.endDate)
-          : null,
+        endDate: data.endDate ? new Date(data.endDate) : null,
 
         status: data.status || "PLANNING",
 
-        budget:
-          data.budget !== undefined &&
-          data.budget !== null
-            ? data.budget
-            : null,
+        budget: data.budget !== undefined && data.budget !== null ? data.budget : null,
       },
       include: {
         client: true,

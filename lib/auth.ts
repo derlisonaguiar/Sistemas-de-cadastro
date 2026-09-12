@@ -49,7 +49,8 @@ export async function requireAuthenticatedProfile() {
 
 export async function requireAdminProfile() {
   const result = await requireAuthenticatedProfile();
-  if (!isAdministrativeRole(result.user.role) && !isAdministrativeRole(result.profile.role)) throw new AuthError("FORBIDDEN");
+  if (!isAdministrativeRole(result.user.role) && !isAdministrativeRole(result.profile.role))
+    throw new AuthError("FORBIDDEN");
   return result;
 }
 
@@ -68,19 +69,14 @@ export function authErrorResponse(error: unknown) {
   if (!(error instanceof AuthError)) return null;
 
   if (error.code === "UNAUTHORIZED") {
-    return NextResponse.json(
-      { ok: false, message: "Não autenticado." },
-      { status: 401 }
-    );
+    return NextResponse.json({ ok: false, message: "Não autenticado." }, { status: 401 });
   }
 
   return NextResponse.json(
     {
       ok: false,
       message:
-        error.code === "PROFILE_REQUIRED"
-          ? "Usuário sem vínculo com uma organização."
-          : "Acesso não autorizado.",
+        error.code === "PROFILE_REQUIRED" ? "Usuário sem vínculo com uma organização." : "Acesso não autorizado.",
     },
     { status: 403 }
   );

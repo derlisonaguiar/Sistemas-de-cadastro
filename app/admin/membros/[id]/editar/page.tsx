@@ -86,11 +86,7 @@ export default function EditarMembroPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [
-          memberResponse,
-          directoratesResponse,
-          positionsResponse,
-        ] = await Promise.all([
+        const [memberResponse, directoratesResponse, positionsResponse] = await Promise.all([
           fetch(`/api/members/${id}`),
           fetch("/api/directorates"),
           fetch("/api/positions"),
@@ -101,9 +97,7 @@ export default function EditarMembroPage() {
         const positionsData = await positionsResponse.json();
 
         if (!memberResponse.ok || !memberData.ok) {
-          setMessage(
-            memberData.message || "Erro ao carregar membro."
-          );
+          setMessage(memberData.message || "Erro ao carregar membro.");
           return;
         }
 
@@ -127,12 +121,8 @@ export default function EditarMembroPage() {
           cep: member.cep || "",
           city: member.city || "",
           state: member.state || "",
-          entryDate: member.entryDate
-            ? member.entryDate.slice(0, 10)
-            : "",
-          exitDate: member.exitDate
-            ? member.exitDate.slice(0, 10)
-            : "",
+          entryDate: member.entryDate ? member.entryDate.slice(0, 10) : "",
+          exitDate: member.exitDate ? member.exitDate.slice(0, 10) : "",
           status: member.status || "ACTIVE",
           directorateId: member.directorateId || "",
           positionId: member.positionId || "",
@@ -152,9 +142,7 @@ export default function EditarMembroPage() {
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
 
-        setMessage(
-          "Erro ao carregar dados do membro."
-        );
+        setMessage("Erro ao carregar dados do membro.");
       } finally {
         setLoading(false);
       }
@@ -165,20 +153,16 @@ export default function EditarMembroPage() {
     }
   }, [id]);
 
-  const availablePositions = positions.filter((position) =>
-    !position.directorateId || position.directorateId === form.directorateId
+  const availablePositions = positions.filter(
+    (position) => !position.directorateId || position.directorateId === form.directorateId
   );
 
   const selectedPosition = useMemo(() => {
-    return positions.find(
-      (position) => position.id === form.positionId
-    );
+    return positions.find((position) => position.id === form.positionId);
   }, [positions, form.positionId]);
 
   const selectedDirectorate = useMemo(() => {
-    return directorates.find(
-      (directorate) => directorate.id === form.directorateId
-    );
+    return directorates.find((directorate) => directorate.id === form.directorateId);
   }, [directorates, form.directorateId]);
 
   const leadershipNotice = useMemo(() => {
@@ -209,8 +193,7 @@ export default function EditarMembroPage() {
         return {
           title: "Diretoria obrigatória",
           text:
-            "Um Diretor ativo precisa estar vinculado a uma diretoria. " +
-            "Selecione uma diretoria antes de salvar.",
+            "Um Diretor ativo precisa estar vinculado a uma diretoria. " + "Selecione uma diretoria antes de salvar.",
         };
       }
 
@@ -230,7 +213,8 @@ export default function EditarMembroPage() {
       ...current,
       [field]: value,
       ...(field === "directorateId" && positions.find((position) => position.id === current.positionId)?.directorateId
-        ? { positionId: "" } : {}),
+        ? { positionId: "" }
+        : {}),
       ...(field === "status" && value === "POS_JR" ? { directorateId: "", positionId: "" } : {}),
     }));
   }
@@ -251,23 +235,18 @@ export default function EditarMembroPage() {
       setSaving(true);
       setMessage("");
 
-      const response = await fetch(
-        `/api/members/${id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(form),
-        }
-      );
+      const response = await fetch(`/api/members/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(form),
+      });
 
       const data = await response.json();
 
       if (!response.ok || !data.ok) {
-        setMessage(
-          data.message || "Erro ao atualizar membro."
-        );
+        setMessage(data.message || "Erro ao atualizar membro.");
         return;
       }
 
@@ -284,127 +263,106 @@ export default function EditarMembroPage() {
   }
 
   if (loading) {
-    return (
-      <div className="text-sm text-gray-600">
-        Carregando membro...
-      </div>
-    );
+    return <div className="text-sm text-gray-600">Carregando membro...</div>;
   }
 
   return (
     <div className="max-w-5xl">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">
-          Editar membro
-        </h1>
+        <h1 className="text-2xl font-semibold text-gray-900">Editar membro</h1>
 
         <p className="mt-1 text-sm text-gray-600">
           Atualize os dados pessoais, acadêmicos e organizacionais do membro.
         </p>
-        {cpfNeedsReview && <p className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">Este membro foi importado com CPF ausente ou inválido. Corrija o CPF para remover a pendência.</p>}
+        {cpfNeedsReview && (
+          <p className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            Este membro foi importado com CPF ausente ou inválido. Corrija o CPF para remover a pendência.
+          </p>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <section className="rounded-lg border border-gray-200 bg-white">
           <div className="border-b border-gray-200 px-5 py-4">
-            <h2 className="font-semibold text-gray-900">
-              Dados pessoais
-            </h2>
+            <h2 className="font-semibold text-gray-900">Dados pessoais</h2>
           </div>
 
-            <div className="grid gap-4 p-5 md:grid-cols-2">
-              <div className="md:col-span-2">
-                <label className="mb-1 block text-sm font-medium text-gray-700">Substituir foto de perfil (opcional)</label>
-                <FileUploadField action="Selecionar foto" hint="JPG, PNG ou WebP, até 2 MB" accept="image/jpeg,image/png,image/webp" onChange={(event) => setPhoto(event.target.files?.[0] || null)} />
-              </div>
+          <div className="grid gap-4 p-5 md:grid-cols-2">
             <div className="md:col-span-2">
               <label className="mb-1 block text-sm font-medium text-gray-700">
-                Nome completo *
+                Substituir foto de perfil (opcional)
               </label>
+              <FileUploadField
+                action="Selecionar foto"
+                hint="JPG, PNG ou WebP, até 2 MB"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={(event) => setPhoto(event.target.files?.[0] || null)}
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="mb-1 block text-sm font-medium text-gray-700">Nome completo *</label>
 
               <input
                 type="text"
                 value={form.fullName}
-                onChange={(e) =>
-                  updateField("fullName", e.target.value)
-                }
+                onChange={(e) => updateField("fullName", e.target.value)}
                 required
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                E-mail
-              </label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">E-mail</label>
 
               <input
                 type="email"
                 value={form.email}
-                onChange={(e) =>
-                  updateField("email", e.target.value)
-                }
+                onChange={(e) => updateField("email", e.target.value)}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Telefone
-              </label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Telefone</label>
 
               <input
                 type="text"
                 value={form.phone}
-                onChange={(e) =>
-                  updateField("phone", e.target.value)
-                }
+                onChange={(e) => updateField("phone", e.target.value)}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                CPF
-              </label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">CPF</label>
 
               <input
                 type="text"
                 required
                 value={form.cpf}
-                onChange={(e) =>
-                  updateField("cpf", e.target.value)
-                }
+                onChange={(e) => updateField("cpf", e.target.value)}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Nacionalidade
-              </label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Nacionalidade</label>
 
               <input
                 type="text"
                 value={form.nationality}
-                onChange={(e) =>
-                  updateField("nationality", e.target.value)
-                }
+                onChange={(e) => updateField("nationality", e.target.value)}
                 placeholder="Ex.: Brasileira"
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Estado civil
-              </label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Estado civil</label>
 
               <select
                 value={form.maritalStatus}
-                onChange={(e) =>
-                  updateField("maritalStatus", e.target.value)
-                }
+                onChange={(e) => updateField("maritalStatus", e.target.value)}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
               >
                 <option value="">Não informado</option>
@@ -417,31 +375,23 @@ export default function EditarMembroPage() {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                RG
-              </label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">RG</label>
 
               <input
                 type="text"
                 value={form.rg}
-                onChange={(e) =>
-                  updateField("rg", e.target.value)
-                }
+                onChange={(e) => updateField("rg", e.target.value)}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Órgão expedidor
-              </label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Órgão expedidor</label>
 
               <input
                 type="text"
                 value={form.rgIssuer}
-                onChange={(e) =>
-                  updateField("rgIssuer", e.target.value)
-                }
+                onChange={(e) => updateField("rgIssuer", e.target.value)}
                 placeholder="Ex.: SSP/PA"
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
               />
@@ -451,38 +401,28 @@ export default function EditarMembroPage() {
 
         <section className="rounded-lg border border-gray-200 bg-white">
           <div className="border-b border-gray-200 px-5 py-4">
-            <h2 className="font-semibold text-gray-900">
-              Dados acadêmicos
-            </h2>
+            <h2 className="font-semibold text-gray-900">Dados acadêmicos</h2>
           </div>
 
           <div className="grid gap-4 p-5 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Curso
-              </label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Curso</label>
 
               <input
                 type="text"
                 value={form.course}
-                onChange={(e) =>
-                  updateField("course", e.target.value)
-                }
+                onChange={(e) => updateField("course", e.target.value)}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Matrícula
-              </label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Matrícula</label>
 
               <input
                 type="text"
                 value={form.registration}
-                onChange={(e) =>
-                  updateField("registration", e.target.value)
-                }
+                onChange={(e) => updateField("registration", e.target.value)}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
               />
             </div>
@@ -491,98 +431,72 @@ export default function EditarMembroPage() {
 
         <section className="rounded-lg border border-gray-200 bg-white">
           <div className="border-b border-gray-200 px-5 py-4">
-            <h2 className="font-semibold text-gray-900">
-              Endereço
-            </h2>
+            <h2 className="font-semibold text-gray-900">Endereço</h2>
           </div>
 
           <div className="grid gap-4 p-5 md:grid-cols-2">
             <div className="md:col-span-2">
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Endereço
-              </label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Endereço</label>
 
               <input
                 type="text"
                 value={form.address}
-                onChange={(e) =>
-                  updateField("address", e.target.value)
-                }
+                onChange={(e) => updateField("address", e.target.value)}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Número
-              </label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Número</label>
 
               <input
                 type="text"
                 value={form.addressNumber}
-                onChange={(e) =>
-                  updateField("addressNumber", e.target.value)
-                }
+                onChange={(e) => updateField("addressNumber", e.target.value)}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Bairro
-              </label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Bairro</label>
 
               <input
                 type="text"
                 value={form.neighborhood}
-                onChange={(e) =>
-                  updateField("neighborhood", e.target.value)
-                }
+                onChange={(e) => updateField("neighborhood", e.target.value)}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                CEP
-              </label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">CEP</label>
 
               <input
                 type="text"
                 value={form.cep}
-                onChange={(e) =>
-                  updateField("cep", e.target.value)
-                }
+                onChange={(e) => updateField("cep", e.target.value)}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Cidade
-              </label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Cidade</label>
 
               <input
                 type="text"
                 value={form.city}
-                onChange={(e) =>
-                  updateField("city", e.target.value)
-                }
+                onChange={(e) => updateField("city", e.target.value)}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Estado
-              </label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Estado</label>
 
               <input
                 type="text"
                 value={form.state}
-                onChange={(e) =>
-                  updateField("state", e.target.value)
-                }
+                onChange={(e) => updateField("state", e.target.value)}
                 placeholder="Ex.: PA"
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
               />
@@ -592,9 +506,7 @@ export default function EditarMembroPage() {
 
         <section className="rounded-lg border border-gray-200 bg-white">
           <div className="border-b border-gray-200 px-5 py-4">
-            <h2 className="font-semibold text-gray-900">
-              Vínculo na organização
-            </h2>
+            <h2 className="font-semibold text-gray-900">Vínculo na organização</h2>
           </div>
 
           <div className="grid gap-4 p-5 md:grid-cols-2">
@@ -604,20 +516,16 @@ export default function EditarMembroPage() {
               </label>
 
               <select
-                id="directorateId" disabled={form.status === "POS_JR"}
+                id="directorateId"
+                disabled={form.status === "POS_JR"}
                 value={form.directorateId}
-                onChange={(e) =>
-                  updateField("directorateId", e.target.value)
-                }
+                onChange={(e) => updateField("directorateId", e.target.value)}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
               >
                 <option value="">Sem diretoria</option>
 
                 {directorates.map((directorate) => (
-                  <option
-                    key={directorate.id}
-                    value={directorate.id}
-                  >
+                  <option key={directorate.id} value={directorate.id}>
                     {directorate.name}
                     {!directorate.active ? " (inativa)" : ""}
                   </option>
@@ -631,20 +539,16 @@ export default function EditarMembroPage() {
               </label>
 
               <select
-                id="positionId" disabled={form.status === "POS_JR"}
+                id="positionId"
+                disabled={form.status === "POS_JR"}
                 value={form.positionId}
-                onChange={(e) =>
-                  updateField("positionId", e.target.value)
-                }
+                onChange={(e) => updateField("positionId", e.target.value)}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
               >
                 <option value="">Sem cargo</option>
 
                 {availablePositions.map((position) => (
-                  <option
-                    key={position.id}
-                    value={position.id}
-                  >
+                  <option key={position.id} value={position.id}>
                     {position.name}
                     {!position.active ? " (inativo)" : ""}
                   </option>
@@ -652,68 +556,51 @@ export default function EditarMembroPage() {
               </select>
             </div>
 
-            {directorates.length === 0 && (
-              <p className="text-sm text-gray-700">Nenhuma diretoria cadastrada.</p>
-            )}
-            {positions.length === 0 && (
-              <p className="text-sm text-gray-700">Nenhum cargo cadastrado.</p>
-            )}
+            {directorates.length === 0 && <p className="text-sm text-gray-700">Nenhuma diretoria cadastrada.</p>}
+            {positions.length === 0 && <p className="text-sm text-gray-700">Nenhum cargo cadastrado.</p>}
             {form.status === "POS_JR" && (
-              <p className="md:col-span-2 text-sm text-gray-700">Pós-Jr não ocupa cargo ou diretoria. Ao salvar, o vínculo anterior ficará no histórico do membro e seus documentos serão preservados.</p>
+              <p className="md:col-span-2 text-sm text-gray-700">
+                Pós-Jr não ocupa cargo ou diretoria. Ao salvar, o vínculo anterior ficará no histórico do membro e seus
+                documentos serão preservados.
+              </p>
             )}
 
             {leadershipNotice && (
               <div className="md:col-span-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-3">
-                <p className="text-sm font-semibold text-amber-900">
-                  {leadershipNotice.title}
-                </p>
+                <p className="text-sm font-semibold text-amber-900">{leadershipNotice.title}</p>
 
-                <p className="mt-1 text-sm text-amber-800">
-                  {leadershipNotice.text}
-                </p>
+                <p className="mt-1 text-sm text-amber-800">{leadershipNotice.text}</p>
               </div>
             )}
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Data de ingresso
-              </label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Data de ingresso</label>
 
               <input
                 type="date"
                 value={form.entryDate}
-                onChange={(e) =>
-                  updateField("entryDate", e.target.value)
-                }
+                onChange={(e) => updateField("entryDate", e.target.value)}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Data de saída
-              </label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Data de saída</label>
 
               <input
                 type="date"
                 value={form.exitDate}
-                onChange={(e) =>
-                  updateField("exitDate", e.target.value)
-                }
+                onChange={(e) => updateField("exitDate", e.target.value)}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Status
-              </label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Status</label>
 
               <select
                 value={form.status}
-                onChange={(e) =>
-                  updateField("status", e.target.value)
-                }
+                onChange={(e) => updateField("status", e.target.value)}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
               >
                 <option value="ACTIVE">Ativo</option>
@@ -727,17 +614,13 @@ export default function EditarMembroPage() {
         </section>
 
         {message && (
-          <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {message}
-          </div>
+          <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{message}</div>
         )}
 
         <div className="flex justify-end gap-3">
           <button
             type="button"
-            onClick={() =>
-              router.push(`/admin/membros/${id}`)
-            }
+            onClick={() => router.push(`/admin/membros/${id}`)}
             className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
             Cancelar

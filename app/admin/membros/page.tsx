@@ -44,8 +44,7 @@ export default function MembrosPage() {
   const [statusMember, setStatusMember] = useState<Member | null>(null);
   const [statusMessage, setStatusMessage] = useState("");
   const [members, setMembers] = useState<Member[]>([]);
-  const [organization, setOrganization] =
-    useState<Organization | null>(null);
+  const [organization, setOrganization] = useState<Organization | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -56,36 +55,24 @@ export default function MembrosPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [
-          membersResponse,
-          organizationResponse,
-        ] = await Promise.all([
+        const [membersResponse, organizationResponse] = await Promise.all([
           fetch("/api/members"),
           fetch("/api/organization"),
         ]);
 
-        const membersData =
-          await membersResponse.json();
+        const membersData = await membersResponse.json();
 
-        const organizationData =
-          await organizationResponse.json();
+        const organizationData = await organizationResponse.json();
 
         if (membersData.ok) {
-          setMembers(
-            membersData.members
-          );
+          setMembers(membersData.members);
         }
 
         if (organizationData.ok) {
-          setOrganization(
-            organizationData.organization
-          );
+          setOrganization(organizationData.organization);
         }
       } catch (error) {
-        console.error(
-          "Erro ao carregar membros:",
-          error
-        );
+        console.error("Erro ao carregar membros:", error);
       } finally {
         setLoading(false);
       }
@@ -96,118 +83,132 @@ export default function MembrosPage() {
 
   const primaryColor = `var(--admin-primary, ${organization?.primaryColor})`;
 
-  const filteredMembers =
-    members.filter((member) => {
-      if (statusFilter && member.status !== statusFilter) return false;
-      const term =
-        search
-          .trim()
-          .toLowerCase();
+  const filteredMembers = members.filter((member) => {
+    if (statusFilter && member.status !== statusFilter) return false;
+    const term = search.trim().toLowerCase();
 
-      if (!term) {
-        return true;
-      }
+    if (!term) {
+      return true;
+    }
 
-      return (
-        member.fullName
-          .toLowerCase()
-          .includes(term) ||
-        member.email
-          ?.toLowerCase()
-          .includes(term) ||
-        member.cpf
-          ?.toLowerCase()
-          .includes(term) ||
-        member.course
-          ?.toLowerCase()
-          .includes(term) ||
-        member.registration
-          ?.toLowerCase()
-          .includes(term) ||
-        member.directorate
-          ?.name
-          .toLowerCase()
-          .includes(term) ||
-        member.position
-          ?.name
-          .toLowerCase()
-          .includes(term)
-      );
-    });
+    return (
+      member.fullName.toLowerCase().includes(term) ||
+      member.email?.toLowerCase().includes(term) ||
+      member.cpf?.toLowerCase().includes(term) ||
+      member.course?.toLowerCase().includes(term) ||
+      member.registration?.toLowerCase().includes(term) ||
+      member.directorate?.name.toLowerCase().includes(term) ||
+      member.position?.name.toLowerCase().includes(term)
+    );
+  });
 
   if (loading) {
-    return (
-      <div className="text-sm text-gray-600">
-        Carregando membros...
-      </div>
-    );
+    return <div className="text-sm text-gray-600">Carregando membros...</div>;
   }
 
   return (
     <div>
-      {statusMessage && <p role="status" className="mb-4 text-sm text-green-700">{statusMessage}</p>}
-      {statusMember && <MemberStatusDialog member={statusMember} onClose={() => setStatusMember(null)} onUpdated={(updated) => {
-        setMembers((current) => current.map((member) => member.id === updated.id ? updated : member));
-        setStatusMember(null);
-        setStatusMessage("Status atualizado com sucesso.");
-      }} />}
+      {statusMessage && (
+        <p role="status" className="mb-4 text-sm text-green-700">
+          {statusMessage}
+        </p>
+      )}
+      {statusMember && (
+        <MemberStatusDialog
+          member={statusMember}
+          onClose={() => setStatusMember(null)}
+          onUpdated={(updated) => {
+            setMembers((current) => current.map((member) => (member.id === updated.id ? updated : member)));
+            setStatusMember(null);
+            setStatusMessage("Status atualizado com sucesso.");
+          }}
+        />
+      )}
       {exportOpen && <MemberExportDialog onClose={() => setExportOpen(false)} />}
-      {importOpen && <MemberImportDialog onClose={() => setImportOpen(false)} onImported={() => { setLoading(true); fetch("/api/members").then((response) => response.json()).then((data) => { if (data.ok) setMembers(data.members); }).finally(() => setLoading(false)); }} />}
+      {importOpen && (
+        <MemberImportDialog
+          onClose={() => setImportOpen(false)}
+          onImported={() => {
+            setLoading(true);
+            fetch("/api/members")
+              .then((response) => response.json())
+              .then((data) => {
+                if (data.ok) setMembers(data.members);
+              })
+              .finally(() => setLoading(false));
+          }}
+        />
+      )}
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">
-            Membros
-          </h1>
+          <h1 className="text-2xl font-semibold text-gray-900">Membros</h1>
 
-          <p className="mt-1 text-sm text-gray-600">
-            Gerencie os membros da organização.
-          </p>
+          <p className="mt-1 text-sm text-gray-600">Gerencie os membros da organização.</p>
         </div>
 
         <div className="flex gap-2">
-          <AdminOnly><button type="button" onClick={() => setImportOpen(true)} className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50">Importar membros</button></AdminOnly>
-          <button type="button" onClick={() => setExportOpen(true)} className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50">Exportar</button>
-          <AdminOnly><Link
-            href="/admin/membros/novo"
-            className="rounded-md px-4 py-2 text-sm font-medium text-white transition"
-            style={{
-              backgroundColor:
-                primaryColor,
-            }}
+          <AdminOnly>
+            <button
+              type="button"
+              onClick={() => setImportOpen(true)}
+              className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+            >
+              Importar membros
+            </button>
+          </AdminOnly>
+          <button
+            type="button"
+            onClick={() => setExportOpen(true)}
+            className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
           >
-            + Novo membro
-          </Link></AdminOnly>
+            Exportar
+          </button>
+          <AdminOnly>
+            <Link
+              href="/admin/membros/novo"
+              className="rounded-md px-4 py-2 text-sm font-medium text-white transition"
+              style={{
+                backgroundColor: primaryColor,
+              }}
+            >
+              + Novo membro
+            </Link>
+          </AdminOnly>
         </div>
       </div>
 
       <div className="rounded-lg border border-gray-200 bg-white">
         <div className="border-b border-gray-200 p-4">
           <div className="max-w-md">
-            <label htmlFor="member-status-filter" className="block text-sm font-medium text-gray-700">Status</label>
-            <select id="member-status-filter" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="mb-3 w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+            <label htmlFor="member-status-filter" className="block text-sm font-medium text-gray-700">
+              Status
+            </label>
+            <select
+              id="member-status-filter"
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+              className="mb-3 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            >
               <option value="">Todos os status</option>
-              {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+              {Object.entries(statusLabels).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
             </select>
             <input
               type="search"
               placeholder="Buscar por nome, diretoria, cargo, curso ou e-mail..."
               value={search}
-              onChange={(event) =>
-                setSearch(
-                  event.target.value
-                )
-              }
+              onChange={(event) => setSearch(event.target.value)}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
             />
           </div>
         </div>
 
-        {filteredMembers.length ===
-        0 ? (
+        {filteredMembers.length === 0 ? (
           <div className="p-8 text-center">
-            <p className="text-sm font-medium text-gray-700">
-              Nenhum membro encontrado.
-            </p>
+            <p className="text-sm font-medium text-gray-700">Nenhum membro encontrado.</p>
 
             <p className="mt-1 text-sm text-gray-500">
               {members.length === 0
@@ -220,96 +221,76 @@ export default function MembrosPage() {
             <table className="w-full text-left text-sm">
               <thead className="border-b border-gray-200 bg-gray-50 text-gray-600">
                 <tr>
-                  <th className="px-4 py-3 font-medium">
-                    Nome
-                  </th>
+                  <th className="px-4 py-3 font-medium">Nome</th>
 
-                  <th className="px-4 py-3 font-medium">
-                    Diretoria
-                  </th>
+                  <th className="px-4 py-3 font-medium">Diretoria</th>
 
-                  <th className="px-4 py-3 font-medium">
-                    Cargo
-                  </th>
+                  <th className="px-4 py-3 font-medium">Cargo</th>
 
-                  <th className="px-4 py-3 font-medium">
-                    Curso
-                  </th>
+                  <th className="px-4 py-3 font-medium">Curso</th>
 
-                  <th className="px-4 py-3 font-medium">
-                    E-mail
-                  </th>
+                  <th className="px-4 py-3 font-medium">E-mail</th>
 
-                  <th className="px-4 py-3 font-medium">
-                    Status
-                  </th>
+                  <th className="px-4 py-3 font-medium">Status</th>
 
-                  <th className="px-4 py-3 font-medium">
-                    Ações
-                  </th>
+                  <th className="px-4 py-3 font-medium">Ações</th>
                 </tr>
               </thead>
 
               <tbody className="divide-y divide-gray-200">
-                {filteredMembers.map(
-                  (member) => (
-                    <tr
-                      key={member.id}
-                      className="hover:bg-gray-50"
-                    >
-                      <td className="px-4 py-3 font-medium text-gray-900">
-                        <div className="flex items-center gap-3"><MemberAvatar name={member.fullName} photoUrl={member.photoUrl} /><span>{member.fullName}{member.cpfNeedsReview && <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">CPF pendente</span>}</span></div>
-                      </td>
+                {filteredMembers.map((member) => (
+                  <tr key={member.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 font-medium text-gray-900">
+                      <div className="flex items-center gap-3">
+                        <MemberAvatar name={member.fullName} photoUrl={member.photoUrl} />
+                        <span>
+                          {member.fullName}
+                          {member.cpfNeedsReview && (
+                            <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                              CPF pendente
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    </td>
 
-                      <td className="px-4 py-3 text-gray-600">
-                        {member
-                          .directorate
-                          ?.name ||
-                          "—"}
-                      </td>
+                    <td className="px-4 py-3 text-gray-600">{member.directorate?.name || "—"}</td>
 
-                      <td className="px-4 py-3 text-gray-600">
-                        {member
-                          .position
-                          ?.name ||
-                          "—"}
-                      </td>
+                    <td className="px-4 py-3 text-gray-600">{member.position?.name || "—"}</td>
 
-                      <td className="px-4 py-3 text-gray-600">
-                        {member.course ||
-                          "—"}
-                      </td>
+                    <td className="px-4 py-3 text-gray-600">{member.course || "—"}</td>
 
-                      <td className="px-4 py-3 text-gray-600">
-                        {member.email ||
-                          "—"}
-                      </td>
+                    <td className="px-4 py-3 text-gray-600">{member.email || "—"}</td>
 
-                      <td className="px-4 py-3">
-                        <AdminOnly fallback={<span className="text-xs">{statusLabels[member.status]}</span>}><button type="button" aria-label={`Alterar status de ${member.fullName}: ${statusLabels[member.status]}`} onClick={() => { setStatusMessage(""); setStatusMember(member); }} className="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200 focus-visible:outline-2">
-                          {
-                            statusLabels[
-                              member.status
-                            ]
-                          }
-                        </button></AdminOnly>
-                      </td>
-
-                      <td className="px-4 py-3">
-                        <Link
-                          href={`/admin/membros/${member.id}`}
-                          className="text-sm font-medium"
-                          style={{
-                            color:
-                              "var(--admin-ink)",
+                    <td className="px-4 py-3">
+                      <AdminOnly fallback={<span className="text-xs">{statusLabels[member.status]}</span>}>
+                        <button
+                          type="button"
+                          aria-label={`Alterar status de ${member.fullName}: ${statusLabels[member.status]}`}
+                          onClick={() => {
+                            setStatusMessage("");
+                            setStatusMember(member);
                           }}
+                          className="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200 focus-visible:outline-2"
                         >
-                          Ver detalhes
-                        </Link>
-                      </td>
-                    </tr>
-                  )
-                )}
+                          {statusLabels[member.status]}
+                        </button>
+                      </AdminOnly>
+                    </td>
+
+                    <td className="px-4 py-3">
+                      <Link
+                        href={`/admin/membros/${member.id}`}
+                        className="text-sm font-medium"
+                        style={{
+                          color: "var(--admin-ink)",
+                        }}
+                      >
+                        Ver detalhes
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

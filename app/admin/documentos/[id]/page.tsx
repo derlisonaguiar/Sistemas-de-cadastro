@@ -123,7 +123,9 @@ export default function DocumentoPage() {
       setDocument(data.document);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Falha no envio.");
-    } finally { setUploading(false); }
+    } finally {
+      setUploading(false);
+    }
   }
 
   useEffect(() => {
@@ -135,12 +137,8 @@ export default function DocumentoPage() {
         if (documentData.ok) {
           setDocument(documentData.document);
         } else {
-          setMessage(
-            documentData.message ||
-              "Documento não encontrado."
-          );
+          setMessage(documentData.message || "Documento não encontrado.");
         }
-
       } catch (error) {
         console.error("Erro ao carregar documento:", error);
         setMessage("Erro ao carregar documento.");
@@ -157,25 +155,18 @@ export default function DocumentoPage() {
   async function handleDelete() {
     if (!document) return;
 
-    const confirmed = window.confirm(
-      `Deseja realmente excluir o documento "${document.title}"?`
-    );
+    const confirmed = window.confirm(`Deseja realmente excluir o documento "${document.title}"?`);
 
     if (!confirmed) return;
 
-    const response = await fetch(
-      `/api/documents/${document.id}`,
-      {
-        method: "DELETE",
-      }
-    );
+    const response = await fetch(`/api/documents/${document.id}`, {
+      method: "DELETE",
+    });
 
     const data = await response.json();
 
     if (!response.ok || !data.ok) {
-      setMessage(
-        data.message || "Erro ao excluir documento."
-      );
+      setMessage(data.message || "Erro ao excluir documento.");
       return;
     }
 
@@ -183,39 +174,25 @@ export default function DocumentoPage() {
   }
 
   if (loading) {
-    return (
-      <div className="text-sm text-gray-600">
-        Carregando documento...
-      </div>
-    );
+    return <div className="text-sm text-gray-600">Carregando documento...</div>;
   }
 
   if (!document) {
     return (
       <div className="rounded-lg border border-gray-200 bg-white p-6">
-        <h1 className="text-xl font-semibold text-gray-900">
-          Documento não encontrado
-        </h1>
+        <h1 className="text-xl font-semibold text-gray-900">Documento não encontrado</h1>
 
-        {message && (
-          <p className="mt-2 text-sm text-red-600">
-            {message}
-          </p>
-        )}
+        {message && <p className="mt-2 text-sm text-red-600">{message}</p>}
       </div>
     );
   }
-
-
 
   return (
     <div className="max-w-6xl">
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-semibold text-gray-900">
-              {document.title}
-            </h1>
+            <h1 className="text-2xl font-semibold text-gray-900">{document.title}</h1>
 
             <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">
               {statusLabel(document.status)}
@@ -229,69 +206,79 @@ export default function DocumentoPage() {
 
         <div className="flex flex-wrap gap-2">
           {document.signedFile ? (
-            <a href={`/api/documents/${document.id}/download?variant=signed`} target="_blank" rel="noopener noreferrer" className="rounded-md border px-4 py-2 text-sm">Abrir assinado · enviado em {formatDate(document.signedAt)}</a>
+            <a
+              href={`/api/documents/${document.id}/download?variant=signed`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-md border px-4 py-2 text-sm"
+            >
+              Abrir assinado · enviado em {formatDate(document.signedAt)}
+            </a>
           ) : document.origin === "GENERATED" ? (
-            <AdminOnly><FileUploadField className="min-w-64" action={uploading ? "Enviando documento..." : "Enviar assinado"} hint="PDF, até 10 MB" accept="application/pdf,.pdf" disabled={uploading} onChange={(event) => {
-                const file = event.target.files?.[0];
-                if (file) void uploadSigned(file);
-                event.target.value = "";
-              }} /></AdminOnly>
+            <AdminOnly>
+              <FileUploadField
+                className="min-w-64"
+                action={uploading ? "Enviando documento..." : "Enviar assinado"}
+                hint="PDF, até 10 MB"
+                accept="application/pdf,.pdf"
+                disabled={uploading}
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) void uploadSigned(file);
+                  event.target.value = "";
+                }}
+              />
+            </AdminOnly>
           ) : null}
-          {document.origin === "GENERATED" && <AdminOnly><button
-            type="button"
-            onClick={handleDelete}
-            className="rounded-md border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
-          >
-            Excluir
-          </button></AdminOnly>}
+          {document.origin === "GENERATED" && (
+            <AdminOnly>
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="rounded-md border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
+              >
+                Excluir
+              </button>
+            </AdminOnly>
+          )}
         </div>
       </div>
 
       {message && (
-        <div className="mb-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {message}
-        </div>
+        <div className="mb-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{message}</div>
       )}
 
-      {document.origin === "IMPORTED" && <div className="mb-5 rounded-md border bg-white p-4 text-sm text-gray-600">
-        <p>Importado em {formatDate(document.importedAt)} · Administrador: {document.importedById}</p>
-        <p className="break-all">SHA-256: {document.importedFileHash}</p>
-        {document.duplicateReason && <p>Justificativa da cópia: {document.duplicateReason}</p>}
-      </div>}
+      {document.origin === "IMPORTED" && (
+        <div className="mb-5 rounded-md border bg-white p-4 text-sm text-gray-600">
+          <p>
+            Importado em {formatDate(document.importedAt)} · Administrador: {document.importedById}
+          </p>
+          <p className="break-all">SHA-256: {document.importedFileHash}</p>
+          {document.duplicateReason && <p>Justificativa da cópia: {document.duplicateReason}</p>}
+        </div>
+      )}
       <DocumentReview key={document.id} document={document} />
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-lg border border-gray-200 bg-white">
           <div className="border-b border-gray-200 px-5 py-4">
-            <h2 className="font-semibold text-gray-900">
-              Documento
-            </h2>
+            <h2 className="font-semibold text-gray-900">Documento</h2>
           </div>
 
           <div className="grid gap-5 p-5 sm:grid-cols-2">
             <div>
-              <p className="text-xs font-medium uppercase text-gray-500">
-                Tipo
-              </p>
+              <p className="text-xs font-medium uppercase text-gray-500">Tipo</p>
 
-              <p className="mt-1 text-sm text-gray-900">
-                {typeLabel(document.type)}
-              </p>
+              <p className="mt-1 text-sm text-gray-900">{typeLabel(document.type)}</p>
             </div>
 
             <div>
-              <p className="text-xs font-medium uppercase text-gray-500">
-                Status
-              </p>
+              <p className="text-xs font-medium uppercase text-gray-500">Status</p>
 
-              <p className="mt-1 text-sm text-gray-900">
-                {statusLabel(document.status)}
-              </p>
+              <p className="mt-1 text-sm text-gray-900">{statusLabel(document.status)}</p>
             </div>
 
             <div>
-              <p className="text-xs font-medium uppercase text-gray-500">
-                Data do documento
-              </p>
+              <p className="text-xs font-medium uppercase text-gray-500">Data do documento</p>
 
               <p className="mt-1 text-sm text-gray-900">
                 {(document.documentDate || document.issueDate)?.slice(0, 10).split("-").reverse().join("/") || "—"}
@@ -299,78 +286,53 @@ export default function DocumentoPage() {
             </div>
 
             <div>
-              <p className="text-xs font-medium uppercase text-gray-500">
-                Assinatura
-              </p>
+              <p className="text-xs font-medium uppercase text-gray-500">Assinatura</p>
 
-              <p className="mt-1 text-sm text-gray-900">
-                {formatDate(document.signatureDate)}
-              </p>
+              <p className="mt-1 text-sm text-gray-900">{formatDate(document.signatureDate)}</p>
             </div>
           </div>
         </section>
 
         <section className="rounded-lg border border-gray-200 bg-white">
           <div className="border-b border-gray-200 px-5 py-4">
-            <h2 className="font-semibold text-gray-900">
-              Vínculos {document.organizationDocument && "· Organização"}
-            </h2>
+            <h2 className="font-semibold text-gray-900">Vínculos {document.organizationDocument && "· Organização"}</h2>
           </div>
 
           <div className="grid gap-5 p-5 sm:grid-cols-2">
             <div>
-              <p className="text-xs font-medium uppercase text-gray-500">
-                Membro
-              </p>
+              <p className="text-xs font-medium uppercase text-gray-500">Membro</p>
 
-              <p className="mt-1 text-sm text-gray-900">
-                {document.member?.fullName || "—"}
-              </p>
+              <p className="mt-1 text-sm text-gray-900">{document.member?.fullName || "—"}</p>
             </div>
 
             <div>
-              <p className="text-xs font-medium uppercase text-gray-500">
-                Cliente
-              </p>
+              <p className="text-xs font-medium uppercase text-gray-500">Cliente</p>
 
-              <p className="mt-1 text-sm text-gray-900">
-                {document.client?.name || "—"}
-              </p>
+              <p className="mt-1 text-sm text-gray-900">{document.client?.name || "—"}</p>
             </div>
 
             <div>
-              <p className="text-xs font-medium uppercase text-gray-500">
-                Projeto
-              </p>
+              <p className="text-xs font-medium uppercase text-gray-500">Projeto</p>
 
-              <p className="mt-1 text-sm text-gray-900">
-                {document.project?.name || "—"}
-              </p>
+              <p className="mt-1 text-sm text-gray-900">{document.project?.name || "—"}</p>
             </div>
 
             <div>
-              <p className="text-xs font-medium uppercase text-gray-500">
-                Contrato
-              </p>
+              <p className="text-xs font-medium uppercase text-gray-500">Contrato</p>
 
-              <p className="mt-1 text-sm text-gray-900">
-                {document.contract?.title || "—"}
-              </p>
+              <p className="mt-1 text-sm text-gray-900">{document.contract?.title || "—"}</p>
             </div>
           </div>
         </section>
 
         <section className="rounded-lg border border-gray-200 bg-white lg:col-span-2">
           <div className="border-b border-gray-200 px-5 py-4">
-            <h2 className="font-semibold text-gray-900">
-              Descrição
-            </h2>
+            <h2 className="font-semibold text-gray-900">Descrição</h2>
           </div>
 
           <div className="p-5">
             <p className="whitespace-pre-wrap text-sm text-gray-700">
-              {document.description ||
-                "Nenhuma descrição cadastrada."}
+              {document.description || "Nenhuma descrição cadastrada."}
             </p>
           </div>
         </section>

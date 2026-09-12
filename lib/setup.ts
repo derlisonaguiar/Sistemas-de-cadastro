@@ -8,7 +8,10 @@ import { createOrganizationEntryCode } from "@/lib/organization-entry-code";
 import { hashPassword } from "@/lib/local-auth";
 
 export class SetupError extends Error {
-  constructor(message: string, public readonly status: 403 | 409) {
+  constructor(
+    message: string,
+    public readonly status: 403 | 409
+  ) {
     super(message);
     this.name = "SetupError";
   }
@@ -31,9 +34,27 @@ export async function completeInitialSetup(data: z.infer<typeof initialSetupSche
     }
 
     const entryCode = createOrganizationEntryCode();
-    const { adminName, adminUsername, adminEmail, adminPassword, adminEmailConfirmation: _adminEmailConfirmation, adminPasswordConfirmation: _adminPasswordConfirmation, ...organizationData } = data;
-    const user = await transaction.authUser.create({ data: { email: adminEmail, username: adminUsername, name: adminName, passwordHash: await hashPassword(adminPassword), role: "ADMIN" } });
-    const organization = await transaction.organization.create({ data: { ...organizationData, entryCodeHash: entryCode.hash } });
+    const {
+      adminName,
+      adminUsername,
+      adminEmail,
+      adminPassword,
+      adminEmailConfirmation: _adminEmailConfirmation,
+      adminPasswordConfirmation: _adminPasswordConfirmation,
+      ...organizationData
+    } = data;
+    const user = await transaction.authUser.create({
+      data: {
+        email: adminEmail,
+        username: adminUsername,
+        name: adminName,
+        passwordHash: await hashPassword(adminPassword),
+        role: "ADMIN",
+      },
+    });
+    const organization = await transaction.organization.create({
+      data: { ...organizationData, entryCodeHash: entryCode.hash },
+    });
     const profile = await transaction.userProfile.create({
       data: { id: user.id, organizationId: organization.id, role: "ADMIN", email: adminEmail, name: adminName },
       select: { id: true, organizationId: true, role: true },

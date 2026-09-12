@@ -20,7 +20,10 @@ export async function resolvePostLoginDestination(identity: PostLoginIdentity, r
 
   const profile = await prisma.userProfile.findUnique({ where: { id: identity.id }, select: { role: true } });
   if (!profile) {
-    const application = await prisma.memberApplication.findUnique({ where: { userId: identity.id }, select: { id: true } });
+    const application = await prisma.memberApplication.findUnique({
+      where: { userId: identity.id },
+      select: { id: true },
+    });
     if (application || identity.selfEnrollment) return "/inscricao";
   }
 

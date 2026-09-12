@@ -23,10 +23,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   const auth = await getAuthenticatedProfile().catch(() => null);
 
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <OrganizationFavicon href={auth?.organization?.faviconUrl} />
         {children}

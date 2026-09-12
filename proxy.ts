@@ -5,8 +5,7 @@ export async function proxy(request: NextRequest) {
   if (request.nextUrl.pathname === "/uploads" || request.nextUrl.pathname.startsWith("/uploads/")) {
     return new NextResponse(null, { status: 404, headers: { "Cache-Control": "private, no-store" } });
   }
-  const pathname =
-    request.nextUrl.pathname;
+  const pathname = request.nextUrl.pathname;
 
   const isMutation = ["POST", "PUT", "PATCH", "DELETE"].includes(request.method);
   if (pathname.startsWith("/api/") && isMutation) {
@@ -21,10 +20,7 @@ export async function proxy(request: NextRequest) {
     }
 
     if (!sameOrigin) {
-      return NextResponse.json(
-        { ok: false, message: "Origem da requisição não autorizada." },
-        { status: 403 }
-      );
+      return NextResponse.json({ ok: false, message: "Origem da requisição não autorizada." }, { status: 403 });
     }
   }
 
@@ -32,12 +28,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    "/uploads/:path*",
-    "/admin/:path*",
-    "/api/:path*",
-    "/login",
-    "/inscricao",
-    "/vincular",
-  ],
+  matcher: ["/uploads/:path*", "/admin/:path*", "/api/:path*", "/login", "/inscricao", "/vincular"],
 };

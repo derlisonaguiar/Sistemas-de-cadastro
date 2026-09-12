@@ -24,17 +24,12 @@ type PythonResult = {
   error?: string;
 };
 
-function formatDate(
-  value: Date | string | null | undefined
-) {
+function formatDate(value: Date | string | null | undefined) {
   if (!value) {
     return "";
   }
 
-  const date =
-    value instanceof Date
-      ? value
-      : new Date(value);
+  const date = value instanceof Date ? value : new Date(value);
 
   if (Number.isNaN(date.getTime())) {
     return "";
@@ -43,17 +38,12 @@ function formatDate(
   return new Intl.DateTimeFormat("pt-BR").format(date);
 }
 
-function getLocalPublicPath(
-  url: string | null | undefined
-) {
+function getLocalPublicPath(url: string | null | undefined) {
   if (!url) {
     return null;
   }
 
-  if (
-    url.startsWith("http://") ||
-    url.startsWith("https://")
-  ) {
+  if (url.startsWith("http://") || url.startsWith("https://")) {
     return null;
   }
 
@@ -63,16 +53,10 @@ function getLocalPublicPath(
   const root = path.resolve(process.cwd(), "public", "uploads") + path.sep;
   if (!resolved.startsWith(root)) return null;
 
-  return path.join(
-    process.cwd(),
-    "public",
-    relativePath
-  );
+  return path.join(process.cwd(), "public", relativePath);
 }
 
-async function fileExists(
-  filePath: string | null
-) {
+async function fileExists(filePath: string | null) {
   if (!filePath) {
     return false;
   }
@@ -85,84 +69,43 @@ async function fileExists(
   }
 }
 
-async function generateWithPython(
-  templatePath: string,
-  outputPath: string,
-  dataPath: string,
-  logoPath: string | null
-) {
-  const generatorPath = path.join(
-    process.cwd(),
-    "document_engine",
-    "generate_document.py"
-  );
+async function generateWithPython(templatePath: string, outputPath: string, dataPath: string, logoPath: string | null) {
+  const generatorPath = path.join(process.cwd(), "document_engine", "generate_document.py");
 
   if (!(await fileExists(generatorPath))) {
-    throw new Error(
-      "Motor Python de documentos não encontrado."
-    );
+    throw new Error("Motor Python de documentos não encontrado.");
   }
 
-  const pythonExecutable =
-    process.env.PYTHON_EXECUTABLE || "python";
+  const pythonExecutable = process.env.PYTHON_EXECUTABLE || "python";
 
-  const args = [
-    generatorPath,
-    "--template",
-    templatePath,
-    "--output",
-    outputPath,
-    "--data",
-    dataPath,
-  ];
+  const args = [generatorPath, "--template", templatePath, "--output", outputPath, "--data", dataPath];
 
   if (logoPath) {
-    args.push(
-      "--logo",
-      logoPath
-    );
+    args.push("--logo", logoPath);
   }
 
-  const {
-    stdout,
-    stderr,
-  } = await execFileAsync(
-    pythonExecutable,
-    args,
-    {
-      cwd: process.cwd(),
-      windowsHide: true,
-      timeout: 30_000,
-      maxBuffer: 1024 * 1024,
-    }
-  );
+  const { stdout, stderr } = await execFileAsync(pythonExecutable, args, {
+    cwd: process.cwd(),
+    windowsHide: true,
+    timeout: 30_000,
+    maxBuffer: 1024 * 1024,
+  });
 
   if (stderr?.trim()) {
-    console.warn(
-      "Aviso do motor Python:",
-      stderr.trim()
-    );
+    console.warn("Aviso do motor Python:", stderr.trim());
   }
 
   const output = stdout.trim();
 
   if (!output) {
-    throw new Error(
-      "O motor Python não retornou resultado."
-    );
+    throw new Error("O motor Python não retornou resultado.");
   }
 
-  const lines = output
-    .split(/\r?\n/)
-    .filter(Boolean);
+  const lines = output.split(/\r?\n/).filter(Boolean);
 
   let result: PythonResult | null = null;
 
-  for (
-    let index = lines.length - 1;
-    index >= 0;
-    index--
-  ) {
+  for (let index = lines.length - 1; index >= 0; index--) {
     try {
       result = JSON.parse(lines[index]);
       break;
@@ -172,29 +115,19 @@ async function generateWithPython(
   }
 
   if (!result) {
-    console.error(
-      "Saída do Python:",
-      output
-    );
+    console.error("Saída do Python:", output);
 
-    throw new Error(
-      "Não foi possível interpretar o resultado do motor Python."
-    );
+    throw new Error("Não foi possível interpretar o resultado do motor Python.");
   }
 
   if (!result.ok) {
-    throw new Error(
-      result.error ||
-        "Erro ao gerar documento no Python."
-    );
+    throw new Error(result.error || "Erro ao gerar documento no Python.");
   }
 
   return result;
 }
 
-export async function POST(
-  request: Request
-) {
+export async function POST(request: Request) {
   let temporaryDataPath: string | null = null;
   let workingDirectory: string | null = null;
   let generatedStorageRef: string | null = null;
@@ -210,14 +143,24 @@ export async function POST(
     if (parsed.response) return parsed.response;
     let { templateId, memberId, manualValues } = parsed.data!;
     let representativeId = parsed.data!.representativeId || "";
-    const previous = parsed.data!.revisionOfId ? await prisma.document.findFirst({
-      where: { id: parsed.data!.revisionOfId, organizationId }, include: { template: { include: { fields: true } } },
-    }) : null;
+    const previous = parsed.data!.revisionOfId
+      ? await prisma.document.findFirst({
+          where: { id: parsed.data!.revisionOfId, organizationId },
+          include: { template: { include: { fields: true } } },
+        })
+      : null;
     const review = previous ? getDocumentReview(previous, previous.template) : null;
     if (parsed.data!.revisionOfId) {
-      if (!previous || !review) return NextResponse.json({ ok: false, message: "Este documento não permite revisão ou o modelo original foi alterado." }, { status: 409 });
+      if (!previous || !review)
+        return NextResponse.json(
+          { ok: false, message: "Este documento não permite revisão ou o modelo original foi alterado." },
+          { status: 409 }
+        );
       if (Object.keys(manualValues).some((key) => !review.fields.some((field) => field.key === key))) {
-        return NextResponse.json({ ok: false, message: "Somente campos manuais permitidos podem ser editados." }, { status: 400 });
+        return NextResponse.json(
+          { ok: false, message: "Somente campos manuais permitidos podem ser editados." },
+          { status: 400 }
+        );
       }
       manualValues = { ...review.values, ...manualValues };
       if (review.fields.some((field) => field.required && !manualValues[field.key]?.trim())) {
@@ -252,18 +195,17 @@ export async function POST(
       );
     }
 
-    const template =
-      await prisma.documentTemplate.findFirst({
-        where: {
-          id: templateId,
-          organizationId,
-        },
+    const template = await prisma.documentTemplate.findFirst({
+      where: {
+        id: templateId,
+        organizationId,
+      },
 
-        include: {
-          fields: true,
-          organization: true,
-        },
-      });
+      include: {
+        fields: true,
+        organization: true,
+      },
+    });
 
     if (!template) {
       return NextResponse.json(
@@ -290,15 +232,17 @@ export async function POST(
     }
 
     if (review && previous?.template && reviewTemplateVersion(template) !== reviewTemplateVersion(previous.template)) {
-      return NextResponse.json({ ok: false, message: "O modelo foi alterado. Recarregue o documento." }, { status: 409 });
+      return NextResponse.json(
+        { ok: false, message: "O modelo foi alterado. Recarregue o documento." },
+        { status: 409 }
+      );
     }
 
     if (!template.originalFileUrl) {
       return NextResponse.json(
         {
           ok: false,
-          message:
-            "O modelo não possui arquivo DOCX original.",
+          message: "O modelo não possui arquivo DOCX original.",
         },
         {
           status: 400,
@@ -313,19 +257,17 @@ export async function POST(
       );
     }
 
-    const member =
-      await prisma.member.findFirst({
-        where: {
-          id: memberId,
-          organizationId:
-            template.organizationId,
-        },
+    const member = await prisma.member.findFirst({
+      where: {
+        id: memberId,
+        organizationId: template.organizationId,
+      },
 
-        include: {
-          directorate: true,
-          position: true,
-        },
-      });
+      include: {
+        directorate: true,
+        position: true,
+      },
+    });
 
     if (!member) {
       return NextResponse.json(
@@ -339,24 +281,16 @@ export async function POST(
       );
     }
 
-    const templateUsesRepresentative =
-      template.fields.some((field) =>
-        field.key.startsWith(
-          "representative."
-        )
-      );
+    const templateUsesRepresentative = template.fields.some((field) => field.key.startsWith("representative."));
 
-    let representative:
-      | typeof member
-      | null = null;
+    let representative: typeof member | null = null;
 
     if (templateUsesRepresentative) {
       if (!representativeId) {
         return NextResponse.json(
           {
             ok: false,
-            message:
-              "Selecione o representante da organização.",
+            message: "Selecione o representante da organização.",
           },
           {
             status: 400,
@@ -364,27 +298,24 @@ export async function POST(
         );
       }
 
-      representative =
-        await prisma.member.findFirst({
-          where: {
-            id: representativeId,
-            organizationId:
-              template.organizationId,
-            status: "ACTIVE",
-          },
+      representative = await prisma.member.findFirst({
+        where: {
+          id: representativeId,
+          organizationId: template.organizationId,
+          status: "ACTIVE",
+        },
 
-          include: {
-            directorate: true,
-            position: true,
-          },
-        });
+        include: {
+          directorate: true,
+          position: true,
+        },
+      });
 
       if (!representative) {
         return NextResponse.json(
           {
             ok: false,
-            message:
-              "Representante não encontrado ou inativo.",
+            message: "Representante não encontrado ou inativo.",
           },
           {
             status: 400,
@@ -392,18 +323,13 @@ export async function POST(
         );
       }
 
-      const role =
-        representative.position?.role;
+      const role = representative.position?.role;
 
-      if (
-        role !== "PRESIDENT" &&
-        role !== "VICE_PRESIDENT"
-      ) {
+      if (role !== "PRESIDENT" && role !== "VICE_PRESIDENT") {
         return NextResponse.json(
           {
             ok: false,
-            message:
-              "O representante precisa ser Presidente ou Vice-Presidente ativo.",
+            message: "O representante precisa ser Presidente ou Vice-Presidente ativo.",
           },
           {
             status: 400,
@@ -423,15 +349,11 @@ export async function POST(
       }
     }
 
-    if (
-      !templatePath ||
-      !(await fileExists(templatePath))
-    ) {
+    if (!templatePath || !(await fileExists(templatePath))) {
       return NextResponse.json(
         {
           ok: false,
-          message:
-            "Arquivo DOCX do modelo não encontrado.",
+          message: "Arquivo DOCX do modelo não encontrado.",
         },
         {
           status: 404,
@@ -439,12 +361,9 @@ export async function POST(
       );
     }
 
-    const selectedLogoUrl = review ? review.content._logoSource :
-      template.organization
-        .documentLogoUrl ||
-      template.organization
-        .logoUrl ||
-      null;
+    const selectedLogoUrl = review
+      ? review.content._logoSource
+      : template.organization.documentLogoUrl || template.organization.logoUrl || null;
 
     let logoPath = getLocalPublicPath(selectedLogoUrl);
 
@@ -456,326 +375,202 @@ export async function POST(
       }
     }
 
-    if (
-      logoPath &&
-      !(await fileExists(logoPath))
-    ) {
-      console.warn(
-        "Logo cadastrada não foi encontrada no disco:",
-        logoPath
-      );
+    if (logoPath && !(await fileExists(logoPath))) {
+      console.warn("Logo cadastrada não foi encontrada no disco:", logoPath);
 
       logoPath = null;
     }
 
     let sourceData = {
       organization: {
-        id:
-          template.organization.id,
+        id: template.organization.id,
 
-        name:
-          template.organization.name,
+        name: template.organization.name,
 
-        shortName:
-          template.organization
-            .shortName || "",
+        shortName: template.organization.shortName || "",
 
-        legalName:
-          template.organization
-            .legalName || "",
+        legalName: template.organization.legalName || "",
 
-        tradeName:
-          template.organization
-            .tradeName || "",
+        tradeName: template.organization.tradeName || "",
 
-        cnpj:
-          template.organization
-            .cnpj || "",
+        cnpj: template.organization.cnpj || "",
 
-        email:
-          template.organization
-            .email || "",
+        email: template.organization.email || "",
 
-        phone:
-          template.organization
-            .phone || "",
+        phone: template.organization.phone || "",
 
-        website:
-          template.organization
-            .website || "",
+        website: template.organization.website || "",
 
-        address:
-          template.organization
-            .address || "",
+        address: template.organization.address || "",
 
-        addressNumber:
-          template.organization
-            .addressNumber || "",
+        addressNumber: template.organization.addressNumber || "",
 
-        neighborhood:
-          template.organization
-            .neighborhood || "",
+        neighborhood: template.organization.neighborhood || "",
 
-        cep:
-          template.organization
-            .cep || "",
+        cep: template.organization.cep || "",
 
-        addressComplement:
-          template.organization
-            .addressComplement || "",
+        addressComplement: template.organization.addressComplement || "",
 
-        city:
-          template.organization
-            .city || "",
+        city: template.organization.city || "",
 
-        state:
-          template.organization
-            .state || "",
+        state: template.organization.state || "",
 
-        stateCode:
-          template.organization
-            .stateCode || "",
+        stateCode: template.organization.stateCode || "",
 
-        documentHeaderText:
-          template.organization
-            .documentHeaderText || "",
+        documentHeaderText: template.organization.documentHeaderText || "",
 
         logoImage: "",
       },
 
       member: {
-        id:
-          member.id,
+        id: member.id,
 
-        fullName:
-          member.fullName,
+        fullName: member.fullName,
 
-        email:
-          member.email || "",
+        email: member.email || "",
 
-        cpf:
-          member.cpf || "",
+        cpf: member.cpf || "",
 
-        phone:
-          member.phone || "",
+        phone: member.phone || "",
 
-        course:
-          member.course || "",
+        course: member.course || "",
 
-        registration:
-          member.registration || "",
+        registration: member.registration || "",
 
-        nationality:
-          member.nationality || "",
+        nationality: member.nationality || "",
 
-        maritalStatus:
-          member.maritalStatus || "",
+        maritalStatus: member.maritalStatus || "",
 
-        rg:
-          member.rg || "",
+        rg: member.rg || "",
 
-        rgIssuer:
-          member.rgIssuer || "",
+        rgIssuer: member.rgIssuer || "",
 
-        address:
-          member.address || "",
+        address: member.address || "",
 
-        addressNumber:
-          member.addressNumber || "",
+        addressNumber: member.addressNumber || "",
 
-        neighborhood:
-          member.neighborhood || "",
+        neighborhood: member.neighborhood || "",
 
-        cep:
-          member.cep || "",
+        cep: member.cep || "",
 
-        city:
-          member.city || "",
+        city: member.city || "",
 
-        state:
-          member.state || "",
+        state: member.state || "",
 
-        entryDate:
-          formatDate(member.entryDate),
+        entryDate: formatDate(member.entryDate),
 
-        exitDate:
-          formatDate(member.exitDate),
+        exitDate: formatDate(member.exitDate),
 
-        status:
-          member.status,
+        status: member.status,
 
         directorate: {
-          name:
-            member.directorate?.name ||
-            "",
+          name: member.directorate?.name || "",
         },
 
         position: {
-          name:
-            member.position?.name ||
-            "",
+          name: member.position?.name || "",
         },
       },
 
-      representative:
-        representative
-          ? {
-              id:
-                representative.id,
+      representative: representative
+        ? {
+            id: representative.id,
 
-              fullName:
-                representative.fullName,
+            fullName: representative.fullName,
 
-              email:
-                representative.email ||
-                "",
+            email: representative.email || "",
 
-              cpf:
-                representative.cpf ||
-                "",
+            cpf: representative.cpf || "",
 
-              phone:
-                representative.phone ||
-                "",
+            phone: representative.phone || "",
 
-              course:
-                representative.course ||
-                "",
+            course: representative.course || "",
 
-              registration:
-                representative.registration ||
-                "",
+            registration: representative.registration || "",
 
-              nationality:
-                representative.nationality ||
-                "",
+            nationality: representative.nationality || "",
 
-              maritalStatus:
-                representative.maritalStatus ||
-                "",
+            maritalStatus: representative.maritalStatus || "",
 
-              rg:
-                representative.rg ||
-                "",
+            rg: representative.rg || "",
 
-              rgIssuer:
-                representative.rgIssuer ||
-                "",
+            rgIssuer: representative.rgIssuer || "",
 
-              address:
-                representative.address ||
-                "",
+            address: representative.address || "",
 
-              addressNumber:
-                representative.addressNumber ||
-                "",
+            addressNumber: representative.addressNumber || "",
 
-              neighborhood:
-                representative.neighborhood ||
-                "",
+            neighborhood: representative.neighborhood || "",
 
-              cep:
-                representative.cep ||
-                "",
+            cep: representative.cep || "",
 
-              city:
-                representative.city ||
-                "",
+            city: representative.city || "",
 
-              state:
-                representative.state ||
-                "",
+            state: representative.state || "",
 
-              directorate:
-                representative.directorate
-                  ?.name || "",
+            directorate: representative.directorate?.name || "",
 
-              position:
-                representative.position
-                  ?.name || "",
-            }
-          : {},
+            position: representative.position?.name || "",
+          }
+        : {},
 
       client: {
-        name: "", companyName: "", cpfCnpj: "", email: "", phone: "", contactName: "", address: "",
+        name: "",
+        companyName: "",
+        cpfCnpj: "",
+        email: "",
+        phone: "",
+        contactName: "",
+        address: "",
       },
 
       project: {
-        name: "", description: "", startDate: "", endDate: "", budget: "",
+        name: "",
+        description: "",
+        startDate: "",
+        endDate: "",
+        budget: "",
       },
 
       contract: {
-        title: "", contractNumber: "", value: "", startDate: "", endDate: "",
+        title: "",
+        contractNumber: "",
+        value: "",
+        startDate: "",
+        endDate: "",
       },
 
       system: {
-        currentDate:
-          new Intl.DateTimeFormat(
-            "pt-BR"
-          ).format(
-            new Date()
-          ),
+        currentDate: new Intl.DateTimeFormat("pt-BR").format(new Date()),
       },
 
-      manual:
-        manualValues,
+      manual: manualValues,
     };
 
-    if (review) sourceData = { ...sourceData, ...review.content, manual: { ...review.content.manual, ...manualValues } };
+    if (review)
+      sourceData = { ...sourceData, ...review.content, manual: { ...review.content.manual, ...manualValues } };
 
     const generatedDirectory = workingDirectory;
     const temporaryDirectory = workingDirectory;
 
-    const timestamp =
-      Date.now();
+    const timestamp = Date.now();
 
     const generatedFileName = "generated.docx";
 
-    const generatedFilePath =
-      path.join(
-        generatedDirectory,
-        generatedFileName
-      );
+    const generatedFilePath = path.join(generatedDirectory, generatedFileName);
 
-    temporaryDataPath =
-      path.join(
-        temporaryDirectory,
-        `${timestamp}-data.json`
-      );
+    temporaryDataPath = path.join(temporaryDirectory, `${timestamp}-data.json`);
 
-    await fs.writeFile(
-      temporaryDataPath,
-      JSON.stringify(
-        sourceData,
-        null,
-        2
-      ),
-      "utf8"
-    );
+    await fs.writeFile(temporaryDataPath, JSON.stringify(sourceData, null, 2), "utf8");
 
-    await generateWithPython(
-      templatePath,
-      generatedFilePath,
-      temporaryDataPath,
-      logoPath
-    );
+    await generateWithPython(templatePath, generatedFilePath, temporaryDataPath, logoPath);
 
-    await fs
-      .unlink(
-        temporaryDataPath
-      )
-      .catch(() => {});
+    await fs.unlink(temporaryDataPath).catch(() => {});
 
     temporaryDataPath = null;
 
-    if (
-      !(await fileExists(
-        generatedFilePath
-      ))
-    ) {
-      throw new Error(
-        "O Python terminou, mas o documento não foi criado."
-      );
+    if (!(await fileExists(generatedFilePath))) {
+      throw new Error("O Python terminou, mas o documento não foi criado.");
     }
 
     const documentId = randomUUID();
@@ -785,103 +580,73 @@ export async function POST(
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     );
 
-    const document =
-      await prisma.document.create({
-        data: {
-          id: documentId,
-          organizationId:
-            template.organizationId,
+    const document = await prisma.document.create({
+      data: {
+        id: documentId,
+        organizationId: template.organizationId,
 
-          templateId:
-            template.id,
+        templateId: template.id,
 
-          memberId:
-            member.id,
+        memberId: member.id,
 
-          clientId: previous?.clientId,
-          projectId: previous?.projectId,
-          contractId: previous?.contractId,
-          description: previous?.description,
-          organizationDocument: previous?.organizationDocument,
+        clientId: previous?.clientId,
+        projectId: previous?.projectId,
+        contractId: previous?.contractId,
+        description: previous?.description,
+        organizationDocument: previous?.organizationDocument,
 
-          title:
-            previous?.title || `${template.name} - ${member.fullName}`,
+        title: previous?.title || `${template.name} - ${member.fullName}`,
 
-          type:
-            template.type,
+        type: template.type,
 
-          status:
-            "ISSUED",
+        status: "ISSUED",
 
-          issueDate:
-            new Date(),
+        issueDate: new Date(),
 
-          content:
-            JSON.stringify({
-              ...sourceData,
-              _reviewTemplateUpdatedAt: reviewTemplateVersion(template),
-              _revisionOfId: previous?.id || null,
-              organization:
-                sourceData.organization,
+        content: JSON.stringify({
+          ...sourceData,
+          _reviewTemplateUpdatedAt: reviewTemplateVersion(template),
+          _revisionOfId: previous?.id || null,
+          organization: sourceData.organization,
 
-              member:
-                sourceData.member,
+          member: sourceData.member,
 
-              representative:
-                sourceData.representative,
+          representative: sourceData.representative,
 
-              system:
-                sourceData.system,
+          system: sourceData.system,
 
-              manual:
-                sourceData.manual,
+          manual: sourceData.manual,
 
-              _representativeId:
-                representative?.id ||
-                null,
+          _representativeId: representative?.id || null,
 
-              _representativeName:
-                representative
-                  ?.fullName ||
-                null,
+          _representativeName: representative?.fullName || null,
 
-              _logoSource:
-                selectedLogoUrl,
-            }),
+          _logoSource: selectedLogoUrl,
+        }),
 
-          generatedDocxUrl: generatedStorageRef,
-        },
-      });
+        generatedDocxUrl: generatedStorageRef,
+      },
+    });
 
     const storedGeneratedReference = generatedStorageRef;
     generatedStorageRef = null;
 
-    console.log(
-      "Documento gerado pelo Python:",
-      {
-        documentId:
-          document.id,
+    console.log("Documento gerado pelo Python:", {
+      documentId: document.id,
 
-        member:
-          member.fullName,
+      member: member.fullName,
 
-        template:
-          template.name,
+      template: template.name,
 
-        logo:
-          selectedLogoUrl ||
-          "sem logo",
+      logo: selectedLogoUrl || "sem logo",
 
-        issueDate:
-          document.issueDate,
-      }
-    );
+      issueDate: document.issueDate,
+    });
 
     return NextResponse.json({
       ok: true,
 
-      message:
-        "Documento gerado com sucesso.",
+      message: "Documento gerado com sucesso.",
 
       document: {
         ...document,
@@ -890,25 +655,17 @@ export async function POST(
 
       generatedDocxUrl: await createSignedStorageUrl(storedGeneratedReference),
 
-      logoUsed:
-        selectedLogoUrl,
+      logoUsed: selectedLogoUrl,
     });
   } catch (error) {
     if (generatedStorageRef) {
       await removeStorageObject(generatedStorageRef).catch(() => undefined);
     }
     if (temporaryDataPath) {
-      await fs
-        .unlink(
-          temporaryDataPath
-        )
-        .catch(() => {});
+      await fs.unlink(temporaryDataPath).catch(() => {});
     }
 
-    console.error(
-      "Erro ao gerar documento:",
-      error
-    );
+    console.error("Erro ao gerar documento:", error);
 
     return internalErrorResponse();
   } finally {

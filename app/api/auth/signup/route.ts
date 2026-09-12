@@ -24,11 +24,16 @@ export async function POST(request: Request) {
       },
     });
     const session = await createSession(user.id);
-    const response = NextResponse.json({ ok: true, requiresConfirmation: false, message: "Conta criada com sucesso." }, { status: 201 });
-    const cookie = sessionCookie(session.token, session.expiresAt); response.cookies.set(cookie.name, cookie.value, cookie.options);
+    const response = NextResponse.json(
+      { ok: true, requiresConfirmation: false, message: "Conta criada com sucesso." },
+      { status: 201 }
+    );
+    const cookie = sessionCookie(session.token, session.expiresAt);
+    response.cookies.set(cookie.name, cookie.value, cookie.options);
     return response;
   } catch (error) {
-    if (error instanceof OrganizationEntryCodeError) return NextResponse.json({ ok: false, message: error.message }, { status: 403 });
+    if (error instanceof OrganizationEntryCodeError)
+      return NextResponse.json({ ok: false, message: error.message }, { status: 403 });
     if (typeof error === "object" && error && "code" in error && error.code === "P2002") {
       return NextResponse.json({ ok: false, message: "Este e-mail ou usuário já está em uso." }, { status: 409 });
     }

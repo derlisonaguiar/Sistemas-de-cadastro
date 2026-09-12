@@ -141,27 +141,19 @@ function formatDate(date: string | null) {
     return "—";
   }
 
-  return new Intl.DateTimeFormat(
-    "pt-BR",
-    {
-      timeZone: "UTC",
-    }
-  ).format(new Date(date));
+  return new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "UTC",
+  }).format(new Date(date));
 }
 
 function formatDateTime(date: string) {
-  return new Intl.DateTimeFormat(
-    "pt-BR",
-    {
-      dateStyle: "short",
-      timeStyle: "short",
-    }
-  ).format(new Date(date));
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(new Date(date));
 }
 
-function displayValue(
-  value: string | null | undefined
-) {
+function displayValue(value: string | null | undefined) {
   return value?.trim() || "—";
 }
 
@@ -169,74 +161,39 @@ export default function MembroPage() {
   const params = useParams();
   const id = params.id as string;
 
-  const [member, setMember] =
-    useState<Member | null>(null);
+  const [member, setMember] = useState<Member | null>(null);
 
-  const [documents, setDocuments] =
-    useState<DocumentItem[]>([]);
+  const [documents, setDocuments] = useState<DocumentItem[]>([]);
 
-  const [
-    organization,
-    setOrganization,
-  ] =
-    useState<Organization | null>(
-      null
-    );
+  const [organization, setOrganization] = useState<Organization | null>(null);
 
-  const [loading, setLoading] =
-    useState(true);
+  const [loading, setLoading] = useState(true);
 
-  const [loadingDocuments, setLoadingDocuments] =
-    useState(false);
+  const [loadingDocuments, setLoadingDocuments] = useState(false);
 
-  const [activeTab, setActiveTab] =
-    useState<
-      | "dados"
-      | "vinculo"
-      | "documentos"
-      | "projetos"
-      | "historico"
-    >("dados");
+  const [activeTab, setActiveTab] = useState<"dados" | "vinculo" | "documentos" | "projetos" | "historico">("dados");
 
   useEffect(() => {
     async function loadData() {
       try {
-        const [
-          memberResponse,
-          organizationResponse,
-        ] = await Promise.all([
-          fetch(
-            `/api/members/${id}`
-          ),
-          fetch(
-            "/api/organization"
-          ),
+        const [memberResponse, organizationResponse] = await Promise.all([
+          fetch(`/api/members/${id}`),
+          fetch("/api/organization"),
         ]);
 
-        const memberData =
-          await memberResponse.json();
+        const memberData = await memberResponse.json();
 
-        const organizationData =
-          await organizationResponse.json();
+        const organizationData = await organizationResponse.json();
 
         if (memberData.ok) {
-          setMember(
-            memberData.member
-          );
+          setMember(memberData.member);
         }
 
-        if (
-          organizationData.ok
-        ) {
-          setOrganization(
-            organizationData.organization
-          );
+        if (organizationData.ok) {
+          setOrganization(organizationData.organization);
         }
       } catch (error) {
-        console.error(
-          "Erro ao carregar membro:",
-          error
-        );
+        console.error("Erro ao carregar membro:", error);
       } finally {
         setLoading(false);
       }
@@ -249,34 +206,22 @@ export default function MembroPage() {
 
   useEffect(() => {
     async function loadDocuments() {
-      if (
-        activeTab !== "documentos" ||
-        !id
-      ) {
+      if (activeTab !== "documentos" || !id) {
         return;
       }
 
       try {
         setLoadingDocuments(true);
 
-        const response =
-          await fetch(
-            `/api/documents?memberId=${id}`
-          );
+        const response = await fetch(`/api/documents?memberId=${id}`);
 
-        const data =
-          await response.json();
+        const data = await response.json();
 
         if (data.ok) {
-          setDocuments(
-            data.documents
-          );
+          setDocuments(data.documents);
         }
       } catch (error) {
-        console.error(
-          "Erro ao carregar documentos:",
-          error
-        );
+        console.error("Erro ao carregar documentos:", error);
       } finally {
         setLoadingDocuments(false);
       }
@@ -286,39 +231,23 @@ export default function MembroPage() {
   }, [activeTab, id]);
 
   if (loading) {
-    return (
-      <div className="text-sm text-gray-600">
-        Carregando membro...
-      </div>
-    );
+    return <div className="text-sm text-gray-600">Carregando membro...</div>;
   }
 
   if (!member) {
     return (
       <div className="rounded-lg border border-gray-200 bg-white p-6">
-        <h1 className="text-xl font-semibold text-gray-900">
-          Membro não encontrado
-        </h1>
+        <h1 className="text-xl font-semibold text-gray-900">Membro não encontrado</h1>
       </div>
     );
   }
 
   const primaryColor = `var(--admin-primary, ${organization?.primaryColor})`;
 
-  const tabClass = (
-    tab:
-      | "dados"
-      | "vinculo"
-      | "documentos"
-      | "projetos"
-      | "historico"
-  ) => {
-    const active =
-      activeTab === tab;
+  const tabClass = (tab: "dados" | "vinculo" | "documentos" | "projetos" | "historico") => {
+    const active = activeTab === tab;
 
-    return active
-      ? "border-b-2 pb-3 font-medium"
-      : "pb-3 text-gray-500";
+    return active ? "border-b-2 pb-3 font-medium" : "pb-3 text-gray-500";
   };
 
   return (
@@ -327,34 +256,33 @@ export default function MembroPage() {
         <div>
           <div className="flex flex-wrap items-center gap-3">
             <MemberAvatar name={member.fullName} photoUrl={member.photoUrl} size="lg" />
-            <h1 className="text-2xl font-semibold text-gray-900">
-              {member.fullName}
-            </h1>
+            <h1 className="text-2xl font-semibold text-gray-900">{member.fullName}</h1>
 
-            {member.cpfNeedsReview && <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-800">CPF pendente</span>}
+            {member.cpfNeedsReview && (
+              <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-800">
+                CPF pendente
+              </span>
+            )}
 
             <span className="rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">
-              {statusLabel(
-                member.status
-              )}
+              {statusLabel(member.status)}
             </span>
           </div>
 
-          <p className="mt-1 text-sm text-gray-600">
-            Perfil e informações do membro.
-          </p>
+          <p className="mt-1 text-sm text-gray-600">Perfil e informações do membro.</p>
         </div>
 
-        <AdminOnly><Link
-          href={`/admin/membros/${member.id}/editar`}
-          style={{
-            backgroundColor:
-              primaryColor,
-          }}
-          className="rounded-md px-4 py-2 text-sm font-medium text-white"
-        >
-          Editar membro
-        </Link></AdminOnly>
+        <AdminOnly>
+          <Link
+            href={`/admin/membros/${member.id}/editar`}
+            style={{
+              backgroundColor: primaryColor,
+            }}
+            className="rounded-md px-4 py-2 text-sm font-medium text-white"
+          >
+            Editar membro
+          </Link>
+        </AdminOnly>
       </div>
 
       <div className="mb-6 flex gap-6 overflow-x-auto border-b border-gray-200 text-sm">
@@ -368,23 +296,13 @@ export default function MembroPage() {
           <button
             key={tab}
             type="button"
-            onClick={() =>
-              setActiveTab(
-                tab as typeof activeTab
-              )
-            }
-            className={
-              tabClass(
-                tab as typeof activeTab
-              )
-            }
+            onClick={() => setActiveTab(tab as typeof activeTab)}
+            className={tabClass(tab as typeof activeTab)}
             style={
               activeTab === tab
                 ? {
-                    borderColor:
-                      "var(--admin-ink)",
-                    color:
-                      "var(--admin-ink)",
+                    borderColor: "var(--admin-ink)",
+                    color: "var(--admin-ink)",
                   }
                 : undefined
             }
@@ -397,218 +315,119 @@ export default function MembroPage() {
       {activeTab === "dados" && (
         <div className="space-y-6">
           {member.membershipHistory?.length > 0 && (
-          <section className="rounded-lg border border-gray-200 bg-white p-5 lg:col-span-2">
-            <h2 className="font-semibold text-gray-900">Histórico de vínculos encerrados</h2>
-            <ul className="mt-3 space-y-2 text-sm text-gray-700">
-              {member.membershipHistory.map((entry, index) => (
-                <li key={`${entry.recordedAt}-${index}`}>
-                  {entry.positionName || "Sem cargo"} · {entry.directorateName || "Sem diretoria"} · Saída: {formatDate(entry.exitDate)}
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
+            <section className="rounded-lg border border-gray-200 bg-white p-5 lg:col-span-2">
+              <h2 className="font-semibold text-gray-900">Histórico de vínculos encerrados</h2>
+              <ul className="mt-3 space-y-2 text-sm text-gray-700">
+                {member.membershipHistory.map((entry, index) => (
+                  <li key={`${entry.recordedAt}-${index}`}>
+                    {entry.positionName || "Sem cargo"} · {entry.directorateName || "Sem diretoria"} · Saída:{" "}
+                    {formatDate(entry.exitDate)}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
-        <section className="rounded-lg border border-gray-200 bg-white">
+          <section className="rounded-lg border border-gray-200 bg-white">
             <div className="border-b border-gray-200 px-5 py-4">
-              <h2 className="font-semibold text-gray-900">
-                Dados pessoais
-              </h2>
+              <h2 className="font-semibold text-gray-900">Dados pessoais</h2>
             </div>
 
             <div className="grid gap-5 p-5 sm:grid-cols-2 lg:grid-cols-3">
               <div>
-                <p className="text-xs font-medium uppercase text-gray-500">
-                  Nome completo
-                </p>
-                <p className="mt-1 text-sm text-gray-900">
-                  {member.fullName}
-                </p>
+                <p className="text-xs font-medium uppercase text-gray-500">Nome completo</p>
+                <p className="mt-1 text-sm text-gray-900">{member.fullName}</p>
               </div>
 
               <div>
-                <p className="text-xs font-medium uppercase text-gray-500">
-                  CPF
-                </p>
-                <p className="mt-1 text-sm text-gray-900">
-                  {displayValue(
-                    member.cpf
-                  )}
-                </p>
+                <p className="text-xs font-medium uppercase text-gray-500">CPF</p>
+                <p className="mt-1 text-sm text-gray-900">{displayValue(member.cpf)}</p>
               </div>
 
               <div>
-                <p className="text-xs font-medium uppercase text-gray-500">
-                  RG
-                </p>
-                <p className="mt-1 text-sm text-gray-900">
-                  {displayValue(
-                    member.rg
-                  )}
-                </p>
+                <p className="text-xs font-medium uppercase text-gray-500">RG</p>
+                <p className="mt-1 text-sm text-gray-900">{displayValue(member.rg)}</p>
               </div>
 
               <div>
-                <p className="text-xs font-medium uppercase text-gray-500">
-                  Órgão emissor
-                </p>
-                <p className="mt-1 text-sm text-gray-900">
-                  {displayValue(
-                    member.rgIssuer
-                  )}
-                </p>
+                <p className="text-xs font-medium uppercase text-gray-500">Órgão emissor</p>
+                <p className="mt-1 text-sm text-gray-900">{displayValue(member.rgIssuer)}</p>
               </div>
 
               <div>
-                <p className="text-xs font-medium uppercase text-gray-500">
-                  Nacionalidade
-                </p>
-                <p className="mt-1 text-sm text-gray-900">
-                  {displayValue(
-                    member.nationality
-                  )}
-                </p>
+                <p className="text-xs font-medium uppercase text-gray-500">Nacionalidade</p>
+                <p className="mt-1 text-sm text-gray-900">{displayValue(member.nationality)}</p>
               </div>
 
               <div>
-                <p className="text-xs font-medium uppercase text-gray-500">
-                  Estado civil
-                </p>
-                <p className="mt-1 text-sm text-gray-900">
-                  {displayValue(
-                    member.maritalStatus
-                  )}
-                </p>
+                <p className="text-xs font-medium uppercase text-gray-500">Estado civil</p>
+                <p className="mt-1 text-sm text-gray-900">{displayValue(member.maritalStatus)}</p>
               </div>
 
               <div>
-                <p className="text-xs font-medium uppercase text-gray-500">
-                  E-mail
-                </p>
-                <p className="mt-1 text-sm text-gray-900">
-                  {displayValue(
-                    member.email
-                  )}
-                </p>
+                <p className="text-xs font-medium uppercase text-gray-500">E-mail</p>
+                <p className="mt-1 text-sm text-gray-900">{displayValue(member.email)}</p>
               </div>
 
               <div>
-                <p className="text-xs font-medium uppercase text-gray-500">
-                  Telefone
-                </p>
-                <p className="mt-1 text-sm text-gray-900">
-                  {displayValue(
-                    member.phone
-                  )}
-                </p>
+                <p className="text-xs font-medium uppercase text-gray-500">Telefone</p>
+                <p className="mt-1 text-sm text-gray-900">{displayValue(member.phone)}</p>
               </div>
             </div>
           </section>
 
           <section className="rounded-lg border border-gray-200 bg-white">
             <div className="border-b border-gray-200 px-5 py-4">
-              <h2 className="font-semibold text-gray-900">
-                Dados acadêmicos
-              </h2>
+              <h2 className="font-semibold text-gray-900">Dados acadêmicos</h2>
             </div>
 
             <div className="grid gap-5 p-5 sm:grid-cols-2">
               <div>
-                <p className="text-xs font-medium uppercase text-gray-500">
-                  Curso
-                </p>
-                <p className="mt-1 text-sm text-gray-900">
-                  {displayValue(
-                    member.course
-                  )}
-                </p>
+                <p className="text-xs font-medium uppercase text-gray-500">Curso</p>
+                <p className="mt-1 text-sm text-gray-900">{displayValue(member.course)}</p>
               </div>
 
               <div>
-                <p className="text-xs font-medium uppercase text-gray-500">
-                  Matrícula
-                </p>
-                <p className="mt-1 text-sm text-gray-900">
-                  {displayValue(
-                    member.registration
-                  )}
-                </p>
+                <p className="text-xs font-medium uppercase text-gray-500">Matrícula</p>
+                <p className="mt-1 text-sm text-gray-900">{displayValue(member.registration)}</p>
               </div>
             </div>
           </section>
 
           <section className="rounded-lg border border-gray-200 bg-white">
             <div className="border-b border-gray-200 px-5 py-4">
-              <h2 className="font-semibold text-gray-900">
-                Endereço
-              </h2>
+              <h2 className="font-semibold text-gray-900">Endereço</h2>
             </div>
 
             <div className="grid gap-5 p-5 sm:grid-cols-2 lg:grid-cols-3">
               <div className="lg:col-span-2">
-                <p className="text-xs font-medium uppercase text-gray-500">
-                  Logradouro
-                </p>
-                <p className="mt-1 text-sm text-gray-900">
-                  {displayValue(
-                    member.address
-                  )}
-                </p>
+                <p className="text-xs font-medium uppercase text-gray-500">Logradouro</p>
+                <p className="mt-1 text-sm text-gray-900">{displayValue(member.address)}</p>
               </div>
 
               <div>
-                <p className="text-xs font-medium uppercase text-gray-500">
-                  Número
-                </p>
-                <p className="mt-1 text-sm text-gray-900">
-                  {displayValue(
-                    member.addressNumber
-                  )}
-                </p>
+                <p className="text-xs font-medium uppercase text-gray-500">Número</p>
+                <p className="mt-1 text-sm text-gray-900">{displayValue(member.addressNumber)}</p>
               </div>
 
               <div>
-                <p className="text-xs font-medium uppercase text-gray-500">
-                  Bairro
-                </p>
-                <p className="mt-1 text-sm text-gray-900">
-                  {displayValue(
-                    member.neighborhood
-                  )}
-                </p>
+                <p className="text-xs font-medium uppercase text-gray-500">Bairro</p>
+                <p className="mt-1 text-sm text-gray-900">{displayValue(member.neighborhood)}</p>
               </div>
 
               <div>
-                <p className="text-xs font-medium uppercase text-gray-500">
-                  CEP
-                </p>
-                <p className="mt-1 text-sm text-gray-900">
-                  {displayValue(
-                    member.cep
-                  )}
-                </p>
+                <p className="text-xs font-medium uppercase text-gray-500">CEP</p>
+                <p className="mt-1 text-sm text-gray-900">{displayValue(member.cep)}</p>
               </div>
 
               <div>
-                <p className="text-xs font-medium uppercase text-gray-500">
-                  Cidade
-                </p>
-                <p className="mt-1 text-sm text-gray-900">
-                  {displayValue(
-                    member.city
-                  )}
-                </p>
+                <p className="text-xs font-medium uppercase text-gray-500">Cidade</p>
+                <p className="mt-1 text-sm text-gray-900">{displayValue(member.city)}</p>
               </div>
 
               <div>
-                <p className="text-xs font-medium uppercase text-gray-500">
-                  Estado
-                </p>
-                <p className="mt-1 text-sm text-gray-900">
-                  {displayValue(
-                    member.state
-                  )}
-                </p>
+                <p className="text-xs font-medium uppercase text-gray-500">Estado</p>
+                <p className="mt-1 text-sm text-gray-900">{displayValue(member.state)}</p>
               </div>
             </div>
           </section>
@@ -618,63 +437,33 @@ export default function MembroPage() {
       {activeTab === "vinculo" && (
         <section className="rounded-lg border border-gray-200 bg-white">
           <div className="border-b border-gray-200 px-5 py-4">
-            <h2 className="font-semibold text-gray-900">
-              Vínculo com a organização
-            </h2>
+            <h2 className="font-semibold text-gray-900">Vínculo com a organização</h2>
           </div>
 
           <div className="grid gap-5 p-5 sm:grid-cols-2 lg:grid-cols-3">
             <div>
-              <p className="text-xs font-medium uppercase text-gray-500">
-                Diretoria
-              </p>
-              <p className="mt-1 text-sm text-gray-900">
-                {member.directorate?.name ||
-                  "Sem diretoria"}
-              </p>
+              <p className="text-xs font-medium uppercase text-gray-500">Diretoria</p>
+              <p className="mt-1 text-sm text-gray-900">{member.directorate?.name || "Sem diretoria"}</p>
             </div>
 
             <div>
-              <p className="text-xs font-medium uppercase text-gray-500">
-                Cargo
-              </p>
-              <p className="mt-1 text-sm text-gray-900">
-                {member.position?.name ||
-                  "Sem cargo"}
-              </p>
+              <p className="text-xs font-medium uppercase text-gray-500">Cargo</p>
+              <p className="mt-1 text-sm text-gray-900">{member.position?.name || "Sem cargo"}</p>
             </div>
 
             <div>
-              <p className="text-xs font-medium uppercase text-gray-500">
-                Status
-              </p>
-              <p className="mt-1 text-sm text-gray-900">
-                {statusLabel(
-                  member.status
-                )}
-              </p>
+              <p className="text-xs font-medium uppercase text-gray-500">Status</p>
+              <p className="mt-1 text-sm text-gray-900">{statusLabel(member.status)}</p>
             </div>
 
             <div>
-              <p className="text-xs font-medium uppercase text-gray-500">
-                Data de ingresso
-              </p>
-              <p className="mt-1 text-sm text-gray-900">
-                {formatDate(
-                  member.entryDate
-                )}
-              </p>
+              <p className="text-xs font-medium uppercase text-gray-500">Data de ingresso</p>
+              <p className="mt-1 text-sm text-gray-900">{formatDate(member.entryDate)}</p>
             </div>
 
             <div>
-              <p className="text-xs font-medium uppercase text-gray-500">
-                Data de desligamento
-              </p>
-              <p className="mt-1 text-sm text-gray-900">
-                {formatDate(
-                  member.exitDate
-                )}
-              </p>
+              <p className="text-xs font-medium uppercase text-gray-500">Data de desligamento</p>
+              <p className="mt-1 text-sm text-gray-900">{formatDate(member.exitDate)}</p>
             </div>
           </div>
         </section>
@@ -684,156 +473,133 @@ export default function MembroPage() {
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="font-semibold text-gray-900">
-                Documentos do membro
-              </h2>
+              <h2 className="font-semibold text-gray-900">Documentos do membro</h2>
 
-              <p className="mt-1 text-sm text-gray-500">
-                Termos, declarações e certificados vinculados a este membro.
-              </p>
+              <p className="mt-1 text-sm text-gray-500">Termos, declarações e certificados vinculados a este membro.</p>
             </div>
 
-            <AdminOnly><Link href={`/admin/documentos/importar?memberId=${member.id}`} className="rounded-md border px-4 py-2 text-sm">Importar documento</Link></AdminOnly>
-            <AdminOnly><Link
-              href={`/admin/documentos/gerar?memberId=${member.id}`}
-              className="rounded-md px-4 py-2 text-sm font-medium text-white"
-              style={{
-                backgroundColor:
-                  primaryColor,
-              }}
-            >
-              + Gerar documento
-            </Link></AdminOnly>
+            <AdminOnly>
+              <Link
+                href={`/admin/documentos/importar?memberId=${member.id}`}
+                className="rounded-md border px-4 py-2 text-sm"
+              >
+                Importar documento
+              </Link>
+            </AdminOnly>
+            <AdminOnly>
+              <Link
+                href={`/admin/documentos/gerar?memberId=${member.id}`}
+                className="rounded-md px-4 py-2 text-sm font-medium text-white"
+                style={{
+                  backgroundColor: primaryColor,
+                }}
+              >
+                + Gerar documento
+              </Link>
+            </AdminOnly>
           </div>
 
           <section className="overflow-hidden rounded-lg border border-gray-200 bg-white">
             {loadingDocuments ? (
-              <div className="p-8 text-center text-sm text-gray-500">
-                Carregando documentos...
-              </div>
+              <div className="p-8 text-center text-sm text-gray-500">Carregando documentos...</div>
             ) : documents.length === 0 ? (
               <div className="p-8 text-center">
-                <p className="text-sm font-medium text-gray-700">
-                  Nenhum documento encontrado.
-                </p>
+                <p className="text-sm font-medium text-gray-700">Nenhum documento encontrado.</p>
 
-                <p className="mt-1 text-sm text-gray-500">
-                  Gere ou importe um documento para este membro.
-                </p>
+                <p className="mt-1 text-sm text-gray-500">Gere ou importe um documento para este membro.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead className="border-b border-gray-200 bg-gray-50 text-gray-600">
                     <tr>
-                      <th className="px-4 py-3 font-medium">
-                        Documento
-                      </th>
-                      <th className="px-4 py-3 font-medium">
-                        Tipo
-                      </th>
-                      <th className="px-4 py-3 font-medium">
-                        Data
-                      </th>
-                      <th className="px-4 py-3 font-medium">
-                        Status
-                      </th>
-                      <th className="px-4 py-3 font-medium">
-                        Arquivo
-                      </th>
+                      <th className="px-4 py-3 font-medium">Documento</th>
+                      <th className="px-4 py-3 font-medium">Tipo</th>
+                      <th className="px-4 py-3 font-medium">Data</th>
+                      <th className="px-4 py-3 font-medium">Status</th>
+                      <th className="px-4 py-3 font-medium">Arquivo</th>
                     </tr>
                   </thead>
 
                   <tbody className="divide-y divide-gray-200">
-                    {documents.map(
-                      (document) => (
-                        <tr
-                          key={
-                            document.id
-                          }
-                          className="hover:bg-gray-50"
-                        >
-                          <td className="px-4 py-3">
-                            <p className="font-medium text-gray-900">
-                              {document.title} <span className="text-xs text-gray-500">{document.origin === "IMPORTED" ? "Importado" : "Gerado"}</span>
-                            </p>
-
-                            {document.template && (
-                              <p className="mt-1 text-xs text-gray-500">
-                                Modelo:{" "}
-                                {
-                                  document
-                                    .template
-                                    .name
-                                }
-                              </p>
-                            )}
-                          </td>
-
-                          <td className="px-4 py-3 text-gray-600">
-                            {documentTypeLabel(
-                              document.type
-                            )}
-                          </td>
-
-                          <td className="px-4 py-3 text-gray-600">
-                            {document.documentDate ? document.documentDate.slice(0, 10).split("-").reverse().join("/") : formatDateTime(document.createdAt)}
-                          </td>
-
-                          <td className="px-4 py-3">
-                            <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700">
-                              {documentStatusLabel(
-                                document.status
-                              )}
+                    {documents.map((document) => (
+                      <tr key={document.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3">
+                          <p className="font-medium text-gray-900">
+                            {document.title}{" "}
+                            <span className="text-xs text-gray-500">
+                              {document.origin === "IMPORTED" ? "Importado" : "Gerado"}
                             </span>
-                          </td>
+                          </p>
 
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-3">
-                              <Link href={`/admin/documentos/${document.id}`} className="text-[var(--admin-ink)] underline">Ver</Link>
-                              {document.origin === "IMPORTED" && <a href={`/api/documents/${document.id}/download?variant=${document.signedFile ? "signed" : "original"}`} className="text-[var(--admin-ink)] underline">{document.signedFile ? "Assinado" : "Arquivo importado"}</a>}
-                              {document.generatedDocxUrl ? (
-                                <a
-                                  href={
-                                    document.generatedDocxUrl
-                                  }
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="text-sm font-medium"
-                                  style={{
-                                    color:
-                                      "var(--admin-ink)",
-                                  }}
-                                >
-                                  DOCX
-                                </a>
-                              ) : (
-                                <span className="text-gray-400">
-                                  —
-                                </span>
-                              )}
+                          {document.template && (
+                            <p className="mt-1 text-xs text-gray-500">Modelo: {document.template.name}</p>
+                          )}
+                        </td>
 
-                              {document.generatedPdfUrl && (
-                                <a
-                                  href={
-                                    document.generatedPdfUrl
-                                  }
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="text-sm font-medium"
-                                  style={{
-                                    color:
-                                      "var(--admin-ink)",
-                                  }}
-                                >
-                                  PDF
-                                </a>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      )
-                    )}
+                        <td className="px-4 py-3 text-gray-600">{documentTypeLabel(document.type)}</td>
+
+                        <td className="px-4 py-3 text-gray-600">
+                          {document.documentDate
+                            ? document.documentDate.slice(0, 10).split("-").reverse().join("/")
+                            : formatDateTime(document.createdAt)}
+                        </td>
+
+                        <td className="px-4 py-3">
+                          <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700">
+                            {documentStatusLabel(document.status)}
+                          </span>
+                        </td>
+
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <Link
+                              href={`/admin/documentos/${document.id}`}
+                              className="text-[var(--admin-ink)] underline"
+                            >
+                              Ver
+                            </Link>
+                            {document.origin === "IMPORTED" && (
+                              <a
+                                href={`/api/documents/${document.id}/download?variant=${document.signedFile ? "signed" : "original"}`}
+                                className="text-[var(--admin-ink)] underline"
+                              >
+                                {document.signedFile ? "Assinado" : "Arquivo importado"}
+                              </a>
+                            )}
+                            {document.generatedDocxUrl ? (
+                              <a
+                                href={document.generatedDocxUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-sm font-medium"
+                                style={{
+                                  color: "var(--admin-ink)",
+                                }}
+                              >
+                                DOCX
+                              </a>
+                            ) : (
+                              <span className="text-gray-400">—</span>
+                            )}
+
+                            {document.generatedPdfUrl && (
+                              <a
+                                href={document.generatedPdfUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-sm font-medium"
+                                style={{
+                                  color: "var(--admin-ink)",
+                                }}
+                              >
+                                PDF
+                              </a>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
@@ -844,21 +610,15 @@ export default function MembroPage() {
 
       {activeTab === "projetos" && (
         <section className="rounded-lg border border-gray-200 bg-white p-8 text-center">
-          <p className="text-sm font-medium text-gray-700">
-            Nenhum projeto exibido nesta área ainda.
-          </p>
+          <p className="text-sm font-medium text-gray-700">Nenhum projeto exibido nesta área ainda.</p>
 
-          <p className="mt-1 text-sm text-gray-500">
-            Os projetos vinculados ao membro aparecerão aqui.
-          </p>
+          <p className="mt-1 text-sm text-gray-500">Os projetos vinculados ao membro aparecerão aqui.</p>
         </section>
       )}
 
       {activeTab === "historico" && (
         <section className="rounded-lg border border-gray-200 bg-white p-8 text-center">
-          <p className="text-sm font-medium text-gray-700">
-            Histórico ainda não disponível.
-          </p>
+          <p className="text-sm font-medium text-gray-700">Histórico ainda não disponível.</p>
 
           <p className="mt-1 text-sm text-gray-500">
             Alterações de cargo, diretoria e status poderão ser registradas nesta área.

@@ -21,14 +21,21 @@ export async function POST(request: Request, context: RouteContext) {
     if (!params.success) return NextResponse.json({ ok: false, message: "ID inválido." }, { status: 400 });
     const organization = auth.auth!.organization;
     if (!organization) return NextResponse.json({ ok: false, message: "Organização não encontrada." }, { status: 404 });
-    const member = await prisma.member.findFirst({ where: { id: params.data.id, organizationId: organization.id }, select: { id: true } });
+    const member = await prisma.member.findFirst({
+      where: { id: params.data.id, organizationId: organization.id },
+      select: { id: true },
+    });
     if (!member) return NextResponse.json({ ok: false, message: "Membro não encontrado." }, { status: 404 });
     const file = (await request.formData()).get("file");
-    if (!(file instanceof File) || file.size <= 0 || file.size > MAX_BYTES) return NextResponse.json({ ok: false, message: "Envie uma imagem de até 2 MB." }, { status: 400 });
+    if (!(file instanceof File) || file.size <= 0 || file.size > MAX_BYTES)
+      return NextResponse.json({ ok: false, message: "Envie uma imagem de até 2 MB." }, { status: 400 });
     const buffer = Buffer.from(await file.arrayBuffer());
     let image: ReturnType<typeof validateImageUpload>;
-    try { image = validateImageUpload(buffer, file); }
-    catch { return NextResponse.json({ ok: false, message: "Envie uma imagem JPG, PNG ou WebP válida." }, { status: 400 }); }
+    try {
+      image = validateImageUpload(buffer, file);
+    } catch {
+      return NextResponse.json({ ok: false, message: "Envie uma imagem JPG, PNG ou WebP válida." }, { status: 400 });
+    }
     const photoUrl = `${await uploadPublicObject(`organizations/${organization.id}/members/${member.id}/profile`, buffer, image.mime)}?v=${Date.now()}`;
     await prisma.member.update({ where: { id: member.id }, data: { photoUrl } });
     return NextResponse.json({ ok: true, photoUrl });
